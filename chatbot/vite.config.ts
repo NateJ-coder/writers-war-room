@@ -22,6 +22,8 @@ export default defineConfig(({ mode }) => {
     const geminiKey = fileConfig.GEMINI_API_KEY || env.GEMINI_API_KEY || '';
 
     return {
+      // Use a relative base so built assets work when served from a subfolder
+      base: './',
       server: {
         port: 3000,
         host: '0.0.0.0',

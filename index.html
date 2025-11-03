@@ -15,10 +15,29 @@
             <button onclick="setTheme('light')">Light</button>
             <button onclick="setTheme('sepia')">Sepia</button>
             <button onclick="setTheme('dark')">Dark</button>
-            <a class="button" href="chatbot/index.html" target="_blank" rel="noopener" style="margin-left:8px; text-decoration:none;">
-                <button type="button">Open Story Assistant</button>
-            </a>
+            <button id="toggle-chatbot" type="button" style="margin-left:8px;">Open Story Assistant</button>
         </div>
+
+        <!-- Embedded chatbot (loads from chatbot-build/index.html). Hidden by default. -->
+        <div id="chatbot-embed" style="display:none; position:fixed; right:18px; bottom:18px; width:420px; height:640px; border:1px solid rgba(0,0,0,.12); box-shadow:0 8px 30px rgba(0,0,0,.45); z-index:9999; border-radius:10px; overflow:hidden; background:#111;">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; background:linear-gradient(90deg,#3a2d23,#2b221a); color:#fff;">
+                <strong style="font-size:14px">Story Assistant</strong>
+                <button id="close-chatbot" style="background:transparent; color:#fff; border:0; font-weight:700; cursor:pointer">✕</button>
+            </div>
+            <iframe id="chatbot-frame" src="chatbot-build/index.html" style="width:100%; height:calc(100% - 44px); border:0; display:block; background:#111;" title="Story Assistant"></iframe>
+        </div>
+
+        <script>
+            (function(){
+                const btn = document.getElementById('toggle-chatbot');
+                const embed = document.getElementById('chatbot-embed');
+                const closeBtn = document.getElementById('close-chatbot');
+                btn?.addEventListener('click', ()=>{
+                    embed.style.display = embed.style.display === 'none' ? 'block' : 'none';
+                });
+                closeBtn?.addEventListener('click', ()=>{ embed.style.display = 'none'; });
+            })();
+        </script>
 
     <main class="dashboard">
         <section id="plot-map" class="board">
