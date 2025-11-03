@@ -39,9 +39,6 @@ const initialPlotBeats = [
 const IMPORT_FIELD_NAME = "character";
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Body background class (safety)
-  try { document.body.classList.add('has-bg'); } catch(e){}
-
   // Apply background image from config if provided
   try {
     const bg = window?.WARROOM_CONFIG?.backgroundImage;
@@ -258,6 +255,23 @@ function setTheme(name){
   const saved = localStorage.getItem('theme') || 'light';
   setTheme(saved);
 })();
+
+// Sanitize any old/corrupt localStorage entries (strip control characters)
+function sanitizeLocalStorageWarroom(){
+  try{
+    const key = 'warroom';
+    const raw = localStorage.getItem(key);
+    if(!raw) return;
+    // Remove control characters (C0 controls + DEL)
+    const cleaned = raw.replace(/[\u0000-\u001F\u007F]/g, '');
+    if(cleaned !== raw){
+      localStorage.setItem(key, cleaned);
+      console.info('Sanitized localStorage key "warroom" — removed control characters.');
+    }
+  }catch(err){ console.warn('Sanitization failed', err); }
+}
+
+sanitizeLocalStorageWarroom();
 
 // Ensure routing runs on load (in case DOMContentLoaded already fired)
 try{ handleRoute(); }catch(e){}
