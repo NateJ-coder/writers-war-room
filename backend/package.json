@@ -1,6 +1,7 @@
 {
-  "name": "warroom-backend",
+  "name": "writers-war-room-backend",
   "version": "1.0.0",
+  "private": true,
   "type": "module",
   "main": "server.js",
   "scripts": {
@@ -8,9 +9,9 @@
     "dev": "node --watch server.js"
   },
   "dependencies": {
+    "@google/genai": "^1.28.0",
     "cors": "^2.8.5",
-    "express": "^4.19.2",
-    "multer": "^1.4.5-lts.1",
-    "xlsx": "^0.18.5"
+    "dotenv": "^16.0.0",
+    "express": "^4.18.2"
   }
 }

@@ -1,11 +1,52 @@
-import express from "express";
-import cors from "cors";
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import { GoogleGenAI } from '@google/genai';
+
+dotenv.config();
+
+const PORT = process.env.PORT || 4000;
+const GEMINI_KEY = process.env.GEMINI_API_KEY;
+
+if (!GEMINI_KEY) {
+  console.warn('Warning: GEMINI_API_KEY not set. The /api/chat endpoint will fail until you set it in environment.');
+}
+
 import multer from "multer";
 import XLSX from "xlsx";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Simple chat proxy: client posts { message: string }
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { message, system } = req.body || {};
+    if (!message) return res.status(400).json({ error: 'missing message' });
+
+    const ai = new GoogleGenAI({ apiKey: GEMINI_KEY });
+
+    // Create a chat session and send the user message.
+    // NOTE: This uses the server-side GenAI client. Adjust the model/config as needed.
+    const chat = ai.chats.create({
+      model: 'gemini-2.5',
+      config: {
+        systemInstruction: system || 'You are a helpful assistant.'
+      }
+    });
+
+    // Send the message and get the full response (non-streaming)
+    const response = await chat.sendMessage({ message });
+    // response may contain text or a more complex structure; normalize below
+    const text = response?.text || (response?.content || '') ;
+
+    return res.json({ response: text });
+  } catch (err) {
+    console.error('Chat proxy error', err);
+    return res.status(500).json({ error: 'chat proxy error' });
+  }
+});
 
 // store uploads in memory
 const upload = multer({ storage: multer.memoryStorage() });
@@ -163,5 +204,5 @@ app.post("/import", upload.single("file"), async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 6060;
+// Start server using the already declared PORT
 app.listen(PORT, () => console.log(`War-Room backend running on http://localhost:${PORT}`));

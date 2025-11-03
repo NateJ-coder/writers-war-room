@@ -68,34 +68,15 @@ const ChatWindow: React.FC = () => {
   }, [messages]);
 
   useEffect(() => {
-    const initChat = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        // FIX: Initialize the GoogleGenAI client and create a chat session.
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const newChat = ai.chats.create({
-          model: 'gemini-2.5-flash',
-          config: {
-            systemInstruction: SYSTEM_INSTRUCTION,
-          },
-        });
-        setChat(newChat);
-        setMessages([
-          { role: Role.MODEL, content: "Hello! I'm your Revolutionary War story assistant. How can I help you brainstorm today?" }
-        ]);
-      } catch (e) {
-        setError('Failed to initialize chat. Please try again later.');
-        console.error(e);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    initChat();
+    // Initialize the page with a greeting; actual chat happens via the server proxy.
+    setMessages([
+      { role: Role.MODEL, content: "Hello! I'm your Revolutionary War story assistant. How can I help you brainstorm today?" }
+    ]);
+    setIsLoading(false);
   }, []);
 
   const handleSendMessage = async (input: string) => {
-    if (!chat || isLoading) return;
+    if (isLoading) return;
 
     setIsLoading(true);
     setError(null);
@@ -103,36 +84,20 @@ const ChatWindow: React.FC = () => {
     setMessages((prev) => [...prev, userMessage]);
 
     try {
-      const responseStream = await chat.sendMessageStream({ message: input });
-
-      let fullResponse = "";
-      // Add a placeholder for the model's response for streaming
-      setMessages((prev) => [...prev, { role: Role.MODEL, content: fullResponse }]);
-
-      for await (const chunk of responseStream) {
-        fullResponse += chunk.text;
-        setMessages((prev) => {
-          const newMessages = [...prev];
-          if (newMessages.length > 0) {
-            newMessages[newMessages.length - 1].content = fullResponse;
-          }
-          return newMessages;
-        });
-      }
+      const resp = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: input, system: SYSTEM_INSTRUCTION })
+      });
+      if (!resp.ok) throw new Error('Bad response from proxy');
+      const data = await resp.json();
+      const text = data?.response || 'No response';
+      setMessages((prev) => [...prev, { role: Role.MODEL, content: text }]);
     } catch (e) {
       console.error(e);
       const errorMessage = 'Sorry, an error occurred. Please try again.';
       setError(errorMessage);
-       setMessages((prev) => {
-          const newMessages = [...prev];
-          // Update the placeholder with an error message
-          if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === Role.MODEL) {
-             newMessages[newMessages.length - 1].content = errorMessage;
-             return newMessages;
-          }
-          // Or add a new error message if there's no placeholder
-          return [...prev, {role: Role.MODEL, content: errorMessage}];
-        });
+      setMessages((prev) => [...prev, { role: Role.MODEL, content: errorMessage }]);
     } finally {
       setIsLoading(false);
     }
