@@ -83,6 +83,23 @@ button:hover {
     background-color: #4E342E; /* Slightly darker hover */
 }
 
+/* Delete button styling for cards (oak aesthetic with deep-red accent) */
+.card button.delete-btn {
+    background-color: #B71C1C; /* Deep Red */
+    color: var(--color-paper);
+    padding: 5px 8px;
+    margin-top: 5px;
+    float: right;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.card button.delete-btn:hover {
+    background-color: #7F0000;
+}
+
 /* Specific container styling for stacking */
 .item-container {
     display: flex;
