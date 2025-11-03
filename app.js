@@ -39,6 +39,9 @@ const initialPlotBeats = [
 const IMPORT_FIELD_NAME = "character";
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Body background class (safety)
+  try { document.body.classList.add('has-bg'); } catch(e){}
+
   // Apply background image from config if provided
   try {
     const bg = window?.WARROOM_CONFIG?.backgroundImage;
@@ -218,3 +221,43 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
+
+// -------------------------
+// Tiny JS helpers (theme + rooms)
+// -------------------------
+// Hash router for pages/rooms
+function setActiveNav(hash){
+  document.querySelectorAll('nav.site-nav a').forEach(a=>{
+    a.classList.toggle('active', a.getAttribute('href')===hash);
+  });
+}
+function showRoom(id){
+  document.querySelectorAll('.room').forEach(r=>r.classList.remove('active'));
+  document.getElementById(id)?.classList.add('active');
+}
+function handleRoute(){
+  const h = location.hash || '#/warroom';
+  setActiveNav(h);
+  if(h.startsWith('#/sticky')) showRoom('room-sticky');
+  else if(h.startsWith('#/research')) showRoom('room-research');
+  else if(h.startsWith('#/exports')) showRoom('room-exports');
+  else showRoom('room-warroom');
+}
+window.addEventListener('hashchange', handleRoute);
+window.addEventListener('DOMContentLoaded', handleRoute);
+
+// Theme toggle (light/dark/sepia) – call setTheme('dark'|'sepia'|'light')
+function setTheme(name){
+  const root = document.documentElement;
+  if(name==='dark') root.setAttribute('data-theme','dark');
+  else if(name==='sepia') root.setAttribute('data-theme','sepia');
+  else root.removeAttribute('data-theme');
+  localStorage.setItem('theme', name);
+}
+(function initTheme(){
+  const saved = localStorage.getItem('theme') || 'light';
+  setTheme(saved);
+})();
+
+// Ensure routing runs on load (in case DOMContentLoaded already fired)
+try{ handleRoute(); }catch(e){}

@@ -98,66 +98,172 @@ body {
 
     .card h3 {
         margin-top: 0;
-        color: var(--color-wood-dark);
-    }
+        /* =========================
+             THEME TOKENS
+             ========================= */
+        :root{
+            /* brand */
+            --wood-900:#4E3A2B;
+            --wood-700:#7A5C43;
+            --paper:#FFF7EA;
+            --ink:#2F251D;
+            --steel:#B0BEC5;
+            --crimson:#B71C1C;
 
-    /* Editable Content Style */
-    [contenteditable="true"] {
-        border: 1px dashed var(--color-accent);
-        padding: 3px;
-        min-height: 20px;
-        display: block;
-    }
+            /* layout */
+            --radius:12px;
+            --gap:18px;
+            --shadow:0 8px 24px rgba(0,0,0,.18);
+            --overlay:rgba(28,22,18,.45);
 
-    /* Button Styling */
-    button {
-        background-color: var(--color-wood-dark);
-        color: var(--color-paper);
-        border: none;
-        padding: 8px 15px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: bold;
-        margin-bottom: 15px;
-    }
+            /* typography */
+            --fs-0:12px; --fs-1:14px; --fs-2:16px; --fs-3:18px; --fs-4:22px; --fs-5:28px;
+            --lh:1.55;
+        }
 
-    button:hover {
-        background-color: #4E342E; /* Slightly darker hover */
-    }
+        :root[data-theme="dark"]{
+            --paper:#F3E9D8;
+            --ink:#1C1A19;
+            --overlay:rgba(0,0,0,.5);
+        }
 
-    /* Delete button styling for cards (oak aesthetic with deep-red accent) */
-    .card button.delete-btn {
-        background-color: #B71C1C; /* Deep Red */
-        color: var(--color-paper);
-        padding: 5px 8px;
-        margin-top: 5px;
-        float: right;
-        border: none;
-        border-radius: 3px;
-        cursor: pointer;
-        font-size: 0.85rem;
-    }
+        :root[data-theme="sepia"]{
+            --paper:#FFF4DE;
+            --ink:#2a2018;
+            --overlay:rgba(35,26,18,.45);
+        }
 
-    .card button.delete-btn:hover {
-        background-color: #7F0000;
-    }
+        /* =========================
+             BASE
+             ========================= */
+        *{box-sizing:border-box}
+        html,body{height:100%}
+        body{
+            font-family: system-ui, Segoe UI, Inter, Roboto, Arial, sans-serif;
+            color:var(--ink);
+            background:var(--paper);
+            margin:0;
+            line-height:var(--lh);
+        }
 
-    /* Specific container styling for stacking */
-    .item-container {
-        display: flex;
-        flex-direction: column;
-    }
+        /* Background image with soft overlay */
+        body.has-bg{
+            background-image:url('background.png');
+            background-size:cover; background-attachment:fixed; background-position:center;
+        }
+        body.has-bg::before{
+            content:""; position:fixed; inset:0; z-index:0;
+            background:var(--overlay);
+            pointer-events:none;
+        }
 
-    /* UX niceties */
-    .card:focus-within {
-        outline: 2px solid var(--color-accent);
-        outline-offset: 2px;
-    }
+        /* Layer content */
+        header, main, nav, .toolbar, .room{ position:relative; z-index:1 }
 
-    button:focus {
-        outline: 2px solid var(--color-accent);
-        outline-offset: 2px;
-    }
+        /* -------------------------
+             HEADER + NAV
+             ------------------------- */
+        header{
+            background:linear-gradient(180deg, rgba(78,58,43,.96), rgba(78,58,43,.88));
+            color:var(--paper);
+            padding:22px 28px;
+            box-shadow:var(--shadow);
+        }
+        header h1{margin:0 0 4px; font-size:var(--fs-5); letter-spacing:.3px}
+        header p{margin:0; opacity:.9; font-size:var(--fs-2)}
 
-    /* Make boards scrollable if content grows too tall */
-    .board { overflow: auto; max-height: 70vh; }
+        nav.site-nav{
+            position:sticky; top:0; z-index:2;
+            display:flex; gap:8px; padding:10px 12px;
+            background:rgba(255,247,234,.65); backdrop-filter:saturate(1.2) blur(6px);
+            border-bottom:1px solid rgba(0,0,0,.05);
+        }
+        nav.site-nav a{
+            text-decoration:none; color:#1d1d1d; font-weight:600;
+            padding:8px 12px; border-radius:8px; font-size:var(--fs-2);
+        }
+        nav.site-nav a.active{ background:var(--paper); box-shadow:var(--shadow) }
+        nav.site-nav a:hover{ background:#fff }
+
+        /* -------------------------
+             TOOLBAR
+             ------------------------- */
+        .toolbar{ display:flex; gap:.75rem; align-items:center; padding:10px 12px }
+
+        /* -------------------------
+             LAYOUT
+             ------------------------- */
+        .dashboard{
+            display:grid; gap:var(--gap); padding:20px;
+            grid-template-columns: 2fr 1fr 1fr; /* tweak per screen via media */
+        }
+        @media (max-width: 1100px){
+            .dashboard{ grid-template-columns:1fr; }
+        }
+
+        /* -------------------------
+             BOARDS / CARDS
+             ------------------------- */
+        .board{
+            background:rgba(122,92,67,.92);
+            padding:14px; border-radius:var(--radius);
+            box-shadow: inset 0 0 10px rgba(0,0,0,.35);
+            min-height:380px; max-height:70vh; overflow:auto;
+        }
+        .board h2{color:#fff; margin:6px 6px 12px}
+
+        .card{
+            background:var(--paper); border:1px solid rgba(0,0,0,.08);
+            padding:12px; margin-bottom:12px; border-radius:10px; box-shadow:var(--shadow);
+            transition: transform .18s ease, box-shadow .18s ease;
+        }
+        .card:hover{ transform: translateY(-2px) }
+        .card h3{margin:0 0 6px; color:var(--wood-900); font-size:var(--fs-3)}
+        [contenteditable="true"]{border:1px dashed var(--steel); padding:6px; min-height:22px; display:block}
+
+        /* Buttons */
+        button{
+            background:var(--wood-900); color:var(--paper); border:none;
+            padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:700;
+            box-shadow:0 2px 8px rgba(0,0,0,.2);
+        }
+        button:hover{ filter:brightness(.95) }
+        button:focus{ outline:2px solid var(--steel); outline-offset:2px }
+        .delete-btn{ background:var(--crimson); float:right; padding:6px 9px; font-size:.85rem }
+
+        /* Focus ring on editable */
+        .card:focus-within{ outline:2px solid var(--steel); outline-offset:2px }
+
+        /* -------------------------
+             ROOM PAGES
+             ------------------------- */
+        .room{ display:none; }
+        .room.active{ display:block; animation:fade .22s ease }
+        @keyframes fade{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
+
+        /* Sticky-Notes room */
+        .room-sticky{ padding:24px; max-width:1200px; margin:0 auto; }
+        .cork{
+            background-image:
+                radial-gradient(rgba(0,0,0,.05) 2px, transparent 3px),
+                radial-gradient(rgba(0,0,0,.04) 1px, transparent 3px);
+            background-size:14px 14px, 18px 18px; background-position:0 0, 6px 6px;
+            background-color:#CEB299;
+            border-radius:12px; padding:18px; box-shadow:var(--shadow); min-height:60vh;
+        }
+        .notes-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px }
+        .note{
+            width:220px; min-height:120px; padding:10px 12px; background:#FFF08A;
+            border:1px solid rgba(0,0,0,.08); border-radius:6px; box-shadow:0 10px 12px rgba(0,0,0,.18);
+            position:relative;
+        }
+        .note:before{
+            content:""; position:absolute; width:40px; height:12px; background:#d44;
+            left:50%; top:-6px; transform:translateX(-50%); border-radius:3px; box-shadow:0 2px 6px rgba(0,0,0,.25);
+        }
+        .note[contenteditable="true"]{ border:0; min-height:80px }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce){
+            *{ animation:none !important; transition:none !important }
+        }
