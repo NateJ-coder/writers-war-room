@@ -204,66 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // --- Import XLSX UI (frontend glue) ---
-  const importBtn = document.getElementById("btn-import-xlsx");
-  const fileInput = document.getElementById("xlsx-input");
-
-  // Adjust if your backend runs elsewhere
-  const BACKEND_URL = "http://localhost:6060";
-
-  importBtn?.addEventListener("click", () => fileInput.click());
-
-  fileInput?.addEventListener("change", async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const form = new FormData();
-    form.append("file", file);
-
-    try {
-      const res = await fetch(`${BACKEND_URL}/import`, {
-        method: "POST",
-        body: form
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || `HTTP ${res.status}`);
-      }
-      const data = await res.json();
-      applyImportedBoards(data);
-      alert("Import complete!");
-    } catch (err) {
-      console.error(err);
-      alert(`Import failed: ${err.message}`);
-    } finally {
-      fileInput.value = ""; // reset
-    }
-  });
-
-  // Merge imported boards into UI (replace or append—default: replace)
-  function applyImportedBoards(payload, { mode = "replace" } = {}) {
-    const mount = (arr, containerId, typeDefault) => {
-      const container = document.getElementById(containerId);
-      if (!container) return;
-      if (mode === "replace") container.innerHTML = "";
-      (arr || []).forEach((item) => {
-        const title = item.title || "Untitled";
-        const content = item.content || "";
-        const type = item.type || typeDefault;
-        container.appendChild(createNewCard(title, content, type));
-      });
-    };
-
-    mount(payload.characters, "character-container", "character");
-    mount(payload.plot, "plot-container", "plot");
-    mount(payload.lore, "lore-container", "lore");
-    mount(payload.locations, "locations-container", "location");
-    mount(payload.evidence, "evidence-container", "evidence");
-    mount(payload.themes, "themes-container", "theme");
-    mount(payload.pov, "pov-container", "pov");
-
-    if (typeof saveState === "function") saveState();
-  }
+  // Import feature removed — keeping frontend simple and focused on manual boards
 
   // --- Basic Drag and Drop placeholder (Within the same container for simplicity) ---
   const containers = [plotContainer, characterContainer, document.getElementById("lore-container")];
