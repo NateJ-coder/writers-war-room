@@ -1,0 +1,17 @@
+# OS files
+Thumbs.db
+Desktop.ini
+
+# Node
+node_modules/
+
+# Editor
+.vscode/
+*.code-workspace
+
+# Logs
+logs/
+*.log
+
+# Temp
+*.tmp

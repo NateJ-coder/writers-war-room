@@ -1,0 +1,90 @@
+:root {
+    /* Oak Palette */
+    --color-wood-dark: #654321;   /* Dark Brown/Oak */
+    --color-wood-medium: #8D6E63; /* Medium Brown */
+    --color-paper: #FFF8E1;      /* Off-White/Cream Paper */
+    --color-accent: #B0BEC5;     /* Silver/Steel (Consultant/Developer feel) */
+    --color-text-dark: #3E2723;  /* Deep Brown Text */
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: var(--color-paper);
+    color: var(--color-text-dark);
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+}
+
+header {
+    background-color: var(--color-wood-dark);
+    color: var(--color-paper);
+    padding: 20px 40px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+h1 { margin-bottom: 5px; }
+h2 { color: var(--color-wood-dark); border-bottom: 2px solid var(--color-accent); padding-bottom: 5px; }
+
+/* Dashboard Layout */
+.dashboard {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr; /* Plot is wider */
+    gap: 20px;
+    padding: 20px;
+}
+
+.board {
+    background-color: var(--color-wood-medium);
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.4); /* Inner shadow for depth */
+    min-height: 400px;
+}
+
+/* Cards (Notes/Elements) */
+.card {
+    background-color: var(--color-paper);
+    border: 1px solid var(--color-wood-medium);
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+    cursor: move; /* Indicates it can be moved */
+}
+
+.card h3 {
+    margin-top: 0;
+    color: var(--color-wood-dark);
+}
+
+/* Editable Content Style */
+[contenteditable="true"] {
+    border: 1px dashed var(--color-accent);
+    padding: 3px;
+    min-height: 20px;
+    display: block;
+}
+
+/* Button Styling */
+button {
+    background-color: var(--color-wood-dark);
+    color: var(--color-paper);
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+button:hover {
+    background-color: #4E342E; /* Slightly darker hover */
+}
+
+/* Specific container styling for stacking */
+.item-container {
+    display: flex;
+    flex-direction: column;
+}
