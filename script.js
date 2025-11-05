@@ -3,7 +3,7 @@
 // instead of calling the Google Generative API directly from the browser.
 //
 // 1) SET THE PROXY URL (replace with your actual Vercel URL if different)
-const PROXY_URL = "https://writers-war-room-fa566gilv-nathan-johnsons-projects-a47c35f2.vercel.app/api-proxy";
+const PROXY_URL = "https://writers-war-room-af0low3ew-nathan-johnsons-projects-a47c35f2.vercel.app/api-proxy";
 // Note: this URL does NOT contain your secret key — the key is configured
 // in the serverless function's environment variables.
 
