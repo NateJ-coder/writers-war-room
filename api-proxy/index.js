@@ -40,8 +40,8 @@ module.exports = async (req, res) => {
   }
 
   // Forward the incoming request body to the Google Generative Language endpoint
-  // Example endpoint (update to v1beta or v1 as appropriate):
-  const endpoint = 'https://generativelanguage.googleapis.com/v1beta2/models/text-bison-001:generateText';
+  // Using Gemini 2.0 Flash (latest, free tier available in Google AI Studio)
+  const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
   try {
     const r = await fetch(endpoint, {
@@ -50,12 +50,37 @@ module.exports = async (req, res) => {
         'Content-Type': 'application/json',
         'x-goog-api-key': apiKey,
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: body.message
+          }]
+        }],
+        systemInstruction: {
+          parts: [{
+            text: body.system || 'You are a helpful assistant.'
+          }]
+        }
+      }),
     });
 
     const text = await r.text();
-    // Proxy the exact status and body back to the client for transparency
-    res.status(r.status).set({ 'Content-Type': r.headers.get('content-type') || 'application/json' }).send(text);
+    
+    if (!r.ok) {
+      console.error('Google API error:', text);
+      res.status(r.status).json({ error: 'Google API error', details: text });
+      return;
+    }
+
+    try {
+      const data = JSON.parse(text);
+      // Gemini API v1beta returns candidates[0].content.parts[0].text
+      const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from model';
+      res.status(200).json({ response: responseText });
+    } catch (parseErr) {
+      console.error('Response parse error:', parseErr);
+      res.status(502).json({ error: 'Failed to parse API response', details: text });
+    }
   } catch (err) {
     console.error('Proxy error:', err);
     res.status(502).json({ error: 'Bad Gateway', details: err.message });

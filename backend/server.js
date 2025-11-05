@@ -30,7 +30,7 @@ app.post('/api/chat', async (req, res) => {
     // Create a chat session and send the user message.
     // NOTE: This uses the server-side GenAI client. Adjust the model/config as needed.
     const chat = ai.chats.create({
-      model: 'gemini-2.5',
+      model: 'gemini-2.0-flash',
       config: {
         systemInstruction: system || 'You are a helpful assistant.'
       }
