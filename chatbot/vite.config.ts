@@ -1,26 +1,9 @@
-import fs from 'fs';
 import path from 'path';
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig, loadEnv, type ConfigEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode }: ConfigEnv) => {
     const env = loadEnv(mode, '.', '');
-
-    // If a local config.json exists, prefer that for the GEMINI key (useful for local dev)
-    let fileConfig: Record<string, string> = {};
-    try {
-        const cfgPath = path.resolve(__dirname, 'config.json');
-        if (fs.existsSync(cfgPath)) {
-            const raw = fs.readFileSync(cfgPath, 'utf-8');
-            fileConfig = JSON.parse(raw || '{}');
-        }
-    } catch (e) {
-        // ignore parse/read errors and fall back to env
-        console.warn('Could not read chatbot/config.json, falling back to environment variables');
-    }
-
-    const geminiKey = fileConfig.GEMINI_API_KEY || env.GEMINI_API_KEY || '';
-
     return {
       // Use a relative base so built assets work when served from a subfolder
       base: './',
@@ -29,10 +12,10 @@ export default defineConfig(({ mode }) => {
         host: '0.0.0.0',
       },
       plugins: [react()],
-      define: {
-        'process.env.API_KEY': JSON.stringify(geminiKey),
-        'process.env.GEMINI_API_KEY': JSON.stringify(geminiKey)
-      },
+      // Do NOT inject server API keys into client bundles.
+      // The client will call /api/chat (or a configured VITE_PROXY_URL) on the server.
+      // Set VITE_PROXY_URL in .env if you need to override the default.
+      define: {},
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),

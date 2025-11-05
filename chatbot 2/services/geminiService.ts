@@ -1,41 +1,48 @@
 
-import { GoogleGenAI, Chat } from '@google/genai';
 import { SYSTEM_INSTRUCTION } from '../constants';
 
-const MODEL_NAME = 'gemini-2.5-flash';
+// This client-side service now forwards requests to a server-side proxy
+// instead of instantiating the Google GenAI client in the browser.
+// Configure the proxy URL at build time using Vite env var `VITE_PROXY_URL`
+// (e.g. VITE_PROXY_URL="https://.../api-proxy") or rely on the default
+// relative path `/api/chat` for same-origin deployments.
 
-let chat: Chat | null = null;
+const DEFAULT_PROXY = '/api/chat';
 
-async function getChatSession(): Promise<Chat> {
-  if (chat) {
-    return chat;
-  }
-
-  if (!process.env.API_KEY) {
-    throw new Error('API_KEY environment variable not set');
-  }
-
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
-  chat = ai.chats.create({
-    model: MODEL_NAME,
-    config: {
-      systemInstruction: SYSTEM_INSTRUCTION,
-    },
-  });
-
-  return chat;
+function getProxyUrl() {
+  // import.meta.env is Vite's env object; VITE_ vars are exposed to the client
+  // when building. If not set, fallback to DEFAULT_PROXY.
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore - import.meta is available in Vite-built code
+  return (import.meta.env && import.meta.env.VITE_PROXY_URL) || DEFAULT_PROXY;
 }
 
 export async function runChat(message: string): Promise<string> {
+  const proxy = getProxyUrl();
+
   try {
-    const chatSession = await getChatSession();
-    const response = await chatSession.sendMessage({ message });
-    return response.text;
-  } catch (error) {
-    console.error('Gemini API call failed:', error);
-    // Invalidate chat session on error
-    chat = null;
-    throw error;
+    const payload = {
+      message,
+      system: SYSTEM_INSTRUCTION
+    };
+
+    const res = await fetch(proxy, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      let errBody = null;
+      try { errBody = await res.json(); } catch (_) { errBody = await res.text(); }
+      throw new Error(`Proxy error ${res.status}: ${JSON.stringify(errBody)}`);
+    }
+
+    const data = await res.json();
+    // Proxy returns JSON shaped like { response: <text> } (backend standard)
+    return data.response || data.output || JSON.stringify(data);
+  } catch (err) {
+    console.error('runChat proxy error:', err);
+    throw err;
   }
 }

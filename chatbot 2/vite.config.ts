@@ -10,10 +10,12 @@ export default defineConfig(({ mode }) => {
         host: '0.0.0.0',
       },
       plugins: [react()],
-      define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
-      },
+      // Do NOT inject server API keys into client bundles.
+      // If you need to configure a proxy URL for the client at build time,
+      // set an env var named VITE_PROXY_URL and reference it in client code
+      // via import.meta.env.VITE_PROXY_URL. Example: VITE_PROXY_URL="https://.../api-proxy"
+      // Keeping `define` empty prevents accidental leakage of secrets.
+      define: {},
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
