@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "api/api-proxy.js": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api-proxy",
+      "destination": "/api/api-proxy.js"
+    }
+  ]
+}
