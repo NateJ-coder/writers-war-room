@@ -1,125 +1,276 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dark Romance War-Room</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>Writer's War Room</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Optional fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Special+Elite&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
 </head>
 <body>
-    <header>
-        <h1>The Writer's War-Room</h1>
-        <p>Project: Dark Romance Novel</p>
+  <div class="app-shell">
+    <!-- fake browser chrome -->
+    <div class="browser-bar">
+      <div class="browser-dots">
+        <div class="browser-dot red"></div>
+        <div class="browser-dot amber"></div>
+        <div class="browser-dot green"></div>
+      </div>
+      <div class="browser-url">
+        <span>https://warroom.writerverse.app/session/03</span>
+      </div>
+    </div>
+
+    <!-- header -->
+    <header class="app-header">
+      <div class="app-title-block">
+        <div class="app-title">Writer's War Room</div>
+        <div class="app-subtitle">campaign command console</div>
+      </div>
+      <div class="header-indicators">
+        <div class="header-pill">
+          <span class="label">Session</span>
+          <span class="value">03 · Siege Draft</span>
+        </div>
+        <div class="header-pill">
+          <span class="label">Focus Window</span>
+          <span class="value">45 min</span>
+        </div>
+        <div class="header-pill">
+          <span class="label">Mode</span>
+          <span class="value">Battle Routine</span>
+        </div>
+      </div>
     </header>
-        <div class="toolbar">
-            <button onclick="setTheme('light')">Light</button>
-            <button onclick="setTheme('sepia')">Sepia</button>
-            <button onclick="setTheme('dark')">Dark</button>
-            <button id="toggle-chatbot" type="button" style="margin-left:8px;">Open Story Assistant</button>
-        </div>
 
-        <!-- Embedded chatbot (loads from chatbot-build/index.html). Hidden by default. -->
-        <div id="chatbot-embed" style="display:none; position:fixed; right:18px; bottom:18px; width:420px; height:640px; border:1px solid rgba(0,0,0,.12); box-shadow:0 8px 30px rgba(0,0,0,.45); z-index:9999; border-radius:10px; overflow:hidden; background:#111;">
-            <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; background:linear-gradient(90deg,#3a2d23,#2b221a); color:#fff;">
-                <strong style="font-size:14px">Story Assistant</strong>
-                <button id="close-chatbot" style="background:transparent; color:#fff; border:0; font-weight:700; cursor:pointer">✕</button>
+    <!-- main -->
+    <main class="app-main">
+      <section class="panels-grid">
+        <!-- LEFT PANEL -->
+        <section class="panel panel-left">
+          <div class="panel-header">
+            <h2 class="panel-title">Manuscript Meters & Opposition</h2>
+            <span class="panel-sub">Status · Today</span>
+          </div>
+          <div class="panel-divider"></div>
+
+          <div class="dials-row">
+            <div class="dial-card">
+              <div class="dial-header">
+                <span>Draft Heat Output</span>
+                <span>2 380 Words</span>
+              </div>
+              <div class="dial">
+                <div class="dial-scale"></div>
+                <div class="dial-needle"></div>
+                <div class="dial-center"></div>
+              </div>
+              <div class="dial-footer">
+                <span>Idle</span>
+                <span>Overclock</span>
+              </div>
             </div>
-            <iframe id="chatbot-frame" src="chatbot-build/index.html" style="width:100%; height:calc(100% - 44px); border:0; display:block; background:#111;" title="Story Assistant"></iframe>
-        </div>
 
-        <script>
-            (function(){
-                const btn = document.getElementById('toggle-chatbot');
-                const embed = document.getElementById('chatbot-embed');
-                const closeBtn = document.getElementById('close-chatbot');
-                btn?.addEventListener('click', ()=>{
-                    embed.style.display = embed.style.display === 'none' ? 'block' : 'none';
-                });
-                closeBtn?.addEventListener('click', ()=>{ embed.style.display = 'none'; });
-            })();
-        </script>
-
-    <main class="dashboard">
-        <section id="plot-map" class="board">
-            <h2>🗺️ Plot Chronology</h2>
-            <div id="plot-container" class="item-container">
-                <button id="add-plot-card">+ Add Scene/Beat</button>
+            <div class="dial-card">
+              <div class="dial-header">
+                <span>Ease Index</span>
+                <span>Stormy</span>
+              </div>
+              <div class="dial">
+                <div class="dial-scale"></div>
+                <div class="dial-needle" style="transform: rotate(-20deg);"></div>
+                <div class="dial-center"></div>
+              </div>
+              <div class="dial-footer">
+                <span>Snags</span>
+                <span>Flow State</span>
+              </div>
             </div>
+          </div>
+
+          <div class="micro-gauges">
+            <div>
+              <div class="micro-gauge-label">Steady Theme</div>
+              <div class="micro-gauge-bar">
+                <div class="micro-gauge-fill" style="width:70%;"></div>
+              </div>
+            </div>
+            <div>
+              <div class="micro-gauge-label">Tone / Voice</div>
+              <div class="micro-gauge-bar">
+                <div class="micro-gauge-fill" style="width:52%;"></div>
+              </div>
+            </div>
+            <div>
+              <div class="micro-gauge-label">Chapter Progress</div>
+              <div class="micro-gauge-bar">
+                <div class="micro-gauge-fill" style="width:40%;"></div>
+              </div>
+            </div>
+            <div>
+              <div class="micro-gauge-label">Character Threads</div>
+              <div class="micro-gauge-bar">
+                <div class="micro-gauge-fill" style="width:83%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="today-queries">
+            <div class="today-queries-title">Today's Writing Orders</div>
+            <ul class="queries-list">
+              <li><span class="tag">01</span> Draft "Secretest Ice Lullaby" (Ch. 12)</li>
+              <li><span class="tag">02</span> Patch "Second Trail at Twilight" (Ch. 13)</li>
+              <li><span class="tag">03</span> Outline "Betrayal at Wolfgate" beats</li>
+              <li><span class="tag">04</span> Revise "Echoes of the Pass" (Ch. 1–5)</li>
+              <li><span class="tag">05</span> Drop foreshadowing hints in harbour scene</li>
+              <li><span class="tag">06</span> Flag continuity risks around siege timeline</li>
+              <li><span class="tag">07</span> Note dialogue cadence for Captain Orrick</li>
+              <li><span class="tag">08</span> Log questions for tomorrow's session</li>
+            </ul>
+          </div>
         </section>
 
-        <section id="characters" class="board">
-            <h2>👥 Character Profiles</h2>
-            <div id="character-container" class="item-container">
-                <button id="add-character-card">+ Add Character</button>
+        <!-- CENTER PANEL -->
+        <section class="panel panel-center">
+          <div class="panel-header">
+            <h2 class="panel-title">Strategy & Routine</h2>
+            <span class="panel-sub">Scene Flow · Hero Arc</span>
+          </div>
+          <div class="panel-divider"></div>
+
+          <div class="center-panel-inner">
+            <!-- Timeline -->
+            <div class="timeline-block">
+              <div class="timeline-label">Act II Siege Sequence · Scene Conveyor</div>
+              <div class="timeline-row">
+                <div class="timeline-item">
+                  <span class="caption">Moving</span>
+                  <strong>Briefing</strong>
+                </div>
+                <div class="timeline-item">
+                  <span class="caption">Damage</span>
+                  <strong>Outer Walls</strong>
+                </div>
+                <div class="timeline-item">
+                  <span class="caption">Escalate</span>
+                  <strong>Night Raid</strong>
+                </div>
+                <div class="timeline-item">
+                  <span class="caption">Interlock</span>
+                  <strong>Betrayal</strong>
+                </div>
+                <div class="timeline-item">
+                  <span class="caption">Recover</span>
+                  <strong>Rally</strong>
+                </div>
+              </div>
             </div>
+
+            <!-- Story Arc -->
+            <div class="arc-block">
+              <div class="timeline-label">Hero's Journey Arc · Draft Overview</div>
+              <div class="arc-canvas">
+                <div class="arc-curve"></div>
+                <div class="arc-node start" data-label="Beginning"></div>
+                <div class="arc-node mid" data-label="Midpoint Break"></div>
+                <div class="arc-node end" data-label="Descent & Dawn"></div>
+                <div class="arc-notes">
+                  <span>Call & Refusal · Mentor · First Gate</span>
+                  <span>All Is Lost · Return · New World</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
 
-                <section id="lore" class="board">
-                    <h2>📚 Lore & Definitions</h2>
-                    <div id="lore-container" class="item-container">
-                        <div class="card lore-card">
-                            <h3>Hudson Highlands & Stony Point</h3>
-                            <p contenteditable="true">
-                                Revolutionary-War theater along the Hudson River. Alaric earned renown
-                                assisting at Stony Point; men whisper “The Jaguar.” Terrain: marsh, ridges,
-                                river choke points; fog and night raids common.
-                            </p>
-                        </div>
-                        <div class="card lore-card">
-                            <h3>Black-Rose Signature</h3>
-                            <p contenteditable="true">
-                                Vampire’s macabre calling card: a single black-petaled rose on each victim.
-                                Scent: faint and sweet; petals seem to drink light. Ties to Alaric’s leather-pouch rose.
-                            </p>
-                        </div>
-                        <div class="card lore-card">
-                            <h3>Lullaby Motif</h3>
-                            <p contenteditable="true">
-                                Her soft humming destabilizes soldiers (Keller), blending terror with tenderness.
-                                Use as an aural motif at key beats.
-                            </p>
-                        </div>
-                    </div>
-                </section>
+        <!-- RIGHT PANEL -->
+        <section class="panel panel-right">
+          <div class="panel-header">
+            <h2 class="panel-title">Character Dossiers</h2>
+            <span class="panel-sub">Faces in this Front</span>
+          </div>
+          <div class="panel-divider"></div>
 
-                <section id="locations" class="board">
-                    <h2>🗺️ Locations</h2>
-                    <div id="locations-container" class="item-container">
-                        <button id="add-location-card">+ Add Location</button>
-                        <div class="card"><h3>Barracks & Stables</h3><p contenteditable="true">Alaric’s dawn walks; mount sequence; guards observe his speed.</p></div>
-                        <div class="card"><h3>Outskirts Farmhouse</h3><p contenteditable="true">Family murder site; hidden corridor; lullaby source; first on-page vampire reveal.</p></div>
-                    </div>
-                </section>
+          <div class="characters-block">
+            <div class="timeline-label">Cast on Stage</div>
+            <div class="avatars-row">
+              <div class="avatar-card">
+                <div class="avatar-circle"></div>
+                <div class="avatar-name">Capt. Ader Corbett</div>
+                <div class="avatar-role">Frontline Officer</div>
+              </div>
+              <div class="avatar-card">
+                <div class="avatar-circle"></div>
+                <div class="avatar-name">Lt. Elen Ravel</div>
+                <div class="avatar-role">Spy & Liaison</div>
+              </div>
+              <div class="avatar-card">
+                <div class="avatar-circle"></div>
+                <div class="avatar-name">Dr. Bram Chast</div>
+                <div class="avatar-role">Field Surgeon</div>
+              </div>
+            </div>
+            <button class="btn-small">View Relationship Web</button>
+          </div>
 
-                <section id="evidence" class="board">
-                    <h2>🧾 Evidence & Signatures</h2>
-                    <div id="evidence-container" class="item-container">
-                        <button id="add-evidence-card">+ Add Evidence</button>
-                        <div class="card"><h3>Black Rose</h3><p contenteditable="true">Found on chest; scent/sheen notes; potential symbolic meaning.</p></div>
-                        <div class="card"><h3>Wounds Pattern</h3><p contenteditable="true">Neck trauma; post-mortem arrangement; any deviations logged.</p></div>
-                    </div>
-                </section>
+          <div class="owl-block">
+            <div class="owl-icon">
+              <div class="owl-eyes"></div>
+            </div>
+            <div>
+              <div class="owl-content-title">M.E.E.L. & Comm-Link</div>
+              <div class="owl-content-text">
+                Owl watch active. I log plot questions, continuity alerts, and curiosities for later passes.
+              </div>
+              <div class="owl-actions">
+                <button type="button">Drop Note</button>
+                <button type="button">Check History</button>
+              </div>
+            </div>
+          </div>
 
-                <section id="themes" class="board">
-                    <h2>🎭 Themes & Motifs</h2>
-                    <div id="themes-container" class="item-container">
-                        <button id="add-theme-card">+ Add Theme</button>
-                        <div class="card"><h3>Duty vs. Desire</h3><p contenteditable="true">Alaric’s iron discipline cracks in the presence of her humanity.</p></div>
-                        <div class="card"><h3>Beauty / Rot</h3><p contenteditable="true">Black rose; lullaby in carnage; tenderness beside ruin.</p></div>
-                    </div>
-                </section>
+          <div class="chat-block">
+            <div class="chat-header">
+              <div class="timeline-label">Comma-Link Chat</div>
+              <div class="chat-badge">Live Thread</div>
+            </div>
+            <div class="chat-history">
+              <div class="chat-message">
+                <div class="meta">00:07 · System</div>
+                <div class="text">New session spun up for Siege Draft iteration.</div>
+              </div>
+              <div class="chat-message">
+                <div class="meta">00:11 · You</div>
+                <div class="text">Flagged the harbour scene for stronger motive clarity.</div>
+              </div>
+              <div class="chat-message">
+                <div class="meta">00:19 · Owl</div>
+                <div class="text">Reminder: foreshadow betrayal via missing supply crates.</div>
+              </div>
+              <div class="chat-message">
+                <div class="meta">00:23 · You</div>
+                <div class="text">Mark Act II midpoint: "Tower breach / first blood on inner wall".</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
 
-                <section id="pov" class="board">
-                    <h2>👁️ POV Tracker</h2>
-                    <div id="pov-container" class="item-container">
-                        <button id="add-pov-card">+ Add POV Beat</button>
-                        <div class="card"><h3>Pippin → Alaric Dawn Walk</h3><p contenteditable="true">Mouse’s insight into Alaric’s gentleness behind the iron mask.</p></div>
-                    </div>
-                </section>
+      <!-- Bottom toolbar -->
+      <footer class="bottom-toolbar">
+        <div class="toolbar-buttons">
+          <button class="tb-btn">Worldmap View</button>
+          <button class="tb-btn">Prompt Console</button>
+          <button class="tb-btn">Continuity &amp; Style Check</button>
+          <button class="tb-btn secondary">Prompt Convert</button>
+          <button class="tb-btn secondary">Snippet Vault</button>
+        </div>
+        <div class="toolbar-status">
+          Draft autosaved · All systems nominal
+        </div>
+      </footer>
     </main>
-
-    <script src="config.js"></script>
-    <script src="script.js"></script>
-    <script src="app.js"></script>
+  </div>
 </body>
 </html>
