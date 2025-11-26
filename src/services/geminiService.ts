@@ -86,12 +86,15 @@ export const getChatResponse = async (history: Message[], includeContext: boolea
       },
     });
     
-    const text = response.text ?? "I'm at a loss for words...";
+    const rawText = response.text ?? "I'm at a loss for words...";
     const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
     const sources: Source[] = groundingChunks?.filter((chunk): chunk is Source => 'web' in chunk) || [];
 
     // Extract commands from response
-    const commands = extractCommands(text);
+    const commands = extractCommands(rawText);
+    
+    // Clean the text to remove JSON commands
+    const text = cleanResponseText(rawText);
 
     return { text, sources, commands };
 
@@ -104,7 +107,7 @@ export const getChatResponse = async (history: Message[], includeContext: boolea
   }
 };
 
-// Extract JSON commands from AI response
+// Extract and remove JSON commands from AI response
 const extractCommands = (text: string): any[] => {
   const commands: any[] = [];
   const jsonRegex = /\{[^{}]*"action"[^{}]*\}/g;
@@ -124,6 +127,22 @@ const extractCommands = (text: string): any[] => {
   }
   
   return commands;
+};
+
+// Remove JSON commands from response text for cleaner display
+const cleanResponseText = (text: string): string => {
+  // Remove JSON command blocks
+  let cleaned = text.replace(/\{[^{}]*"action"[^{}]*\}/g, '').trim();
+  
+  // Remove extra whitespace and empty lines
+  cleaned = cleaned.replace(/\n\s*\n\s*\n/g, '\n\n');
+  
+  // If text is now empty or just whitespace after removing commands, return a confirmation
+  if (!cleaned || cleaned.trim().length === 0) {
+    return 'Done! ✓';
+  }
+  
+  return cleaned;
 };
 
 // Refine writing draft for organized book format

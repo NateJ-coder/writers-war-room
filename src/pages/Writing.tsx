@@ -1,53 +1,42 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { refineBookDraft, analyzeDraftForElements } from '../services/geminiService';
 import { saveWebsiteContent, updateBookDraftFile, selectExistingBookDraft, isFileLinked, getWebsiteContext } from '../services/contentContext';
 import { getDb, collection, doc, setDoc, serverTimestamp } from '../services/firebase';
 
 const Writing = () => {
   const [draft, setDraft] = useState('');
+  const [sessionActive, setSessionActive] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isReviewing, setIsReviewing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveNotification, setSaveNotification] = useState('');
   const [reviewFeedback, setReviewFeedback] = useState('');
   const [fileLinked, setFileLinked] = useState(false);
-  const autoSaveTimerRef = useRef<number | null>(null);
 
   // Load draft from localStorage on mount
   useEffect(() => {
-    const saved = localStorage.getItem('writing-draft');
-    if (saved) {
-      setDraft(saved);
-    }
     const savedTime = localStorage.getItem('writing-last-saved');
     if (savedTime) {
       setLastSaved(new Date(savedTime));
     }
     // Check if file is already linked
     setFileLinked(isFileLinked());
+    
+    // Check if there's an active session
+    const activeSession = sessionStorage.getItem('writing-session-active');
+    const sessionContent = sessionStorage.getItem('writing-session-content');
+    if (activeSession === 'true' && sessionContent) {
+      setSessionActive(true);
+      setDraft(sessionContent);
+    }
   }, []);
 
-  // Auto-save effect
+  // Auto-save session content to sessionStorage (not to cloud/file)
   useEffect(() => {
-    // Clear existing timer
-    if (autoSaveTimerRef.current) {
-      clearTimeout(autoSaveTimerRef.current);
+    if (sessionActive && draft) {
+      sessionStorage.setItem('writing-session-content', draft);
     }
-
-    // Set new timer
-    autoSaveTimerRef.current = window.setTimeout(() => {
-      if (draft) {
-        saveDraft();
-      }
-    }, 30000); // 30 seconds
-
-    // Cleanup on unmount
-    return () => {
-      if (autoSaveTimerRef.current) {
-        clearTimeout(autoSaveTimerRef.current);
-      }
-    };
-  }, [draft]);
+  }, [draft, sessionActive]);
 
   const handleSelectFile = async () => {
     try {
@@ -68,6 +57,34 @@ const Writing = () => {
     }
   };
 
+  const beginSession = () => {
+    setSessionActive(true);
+    setDraft('');
+    sessionStorage.setItem('writing-session-active', 'true');
+    sessionStorage.setItem('writing-session-content', '');
+    setSaveNotification('📝 Session started - write freely!');
+    setTimeout(() => setSaveNotification(''), 3000);
+  };
+
+  const endSession = async () => {
+    if (!draft.trim()) {
+      // Just close the session if nothing was written
+      setSessionActive(false);
+      sessionStorage.removeItem('writing-session-active');
+      sessionStorage.removeItem('writing-session-content');
+      setSaveNotification('Session ended (no content to save)');
+      setTimeout(() => setSaveNotification(''), 3000);
+      return;
+    }
+
+    await saveDraft();
+    
+    // Clear session after successful save
+    setSessionActive(false);
+    sessionStorage.removeItem('writing-session-active');
+    sessionStorage.removeItem('writing-session-content');
+  };
+
   const saveDraft = async () => {
     if (!draft.trim()) return;
     
@@ -75,23 +92,26 @@ const Writing = () => {
     setSaveNotification('Saving...');
 
     try {
-      // 1. Save raw draft to localStorage
-      localStorage.setItem('writing-draft', draft);
-      const now = new Date();
-      localStorage.setItem('writing-last-saved', now.toISOString());
-      setLastSaved(now);
-
-      // 2. Refine draft with AI
-      setSaveNotification('Refining with AI...');
-      const refinedDraft = await refineBookDraft(draft);
+      // 1. Get existing book draft content
+      const existingDraft = localStorage.getItem('refined-book-draft') || '';
       
-      // Save refined draft to localStorage
-      saveWebsiteContent({ refinedBookDraft: refinedDraft });
+      // 2. Refine NEW session content with AI
+      setSaveNotification('Refining new content with AI...');
+      const refinedNewContent = await refineBookDraft(draft);
       
-      // 3. Update book-draft.txt file
+      // 3. Merge with existing content (append, don't duplicate)
+      setSaveNotification('Merging with existing content...');
+      const mergedDraft = existingDraft 
+        ? `${existingDraft}\n\n${refinedNewContent}` 
+        : refinedNewContent;
+      
+      // Save merged draft to localStorage
+      saveWebsiteContent({ refinedBookDraft: mergedDraft });
+      
+      // 4. Update book-draft.txt file
       if (fileLinked) {
         setSaveNotification('Updating book-draft.txt...');
-        const fileUpdated = await updateBookDraftFile(refinedDraft);
+        const fileUpdated = await updateBookDraftFile(mergedDraft);
         
         if (!fileUpdated) {
           // If file update failed, reset link status
@@ -106,25 +126,30 @@ const Writing = () => {
         console.log('No file linked - skipping file update');
       }
 
-      // 4. Save to Firebase
+      // 5. Update last saved time
+      const now = new Date();
+      localStorage.setItem('writing-last-saved', now.toISOString());
+      setLastSaved(now);
+      
+      // 6. Save to Firebase
       setSaveNotification('Backing up to cloud...');
       try {
         const db = getDb();
         const userId = 'default-user'; // Replace with actual user ID when auth is implemented
         const draftRef = doc(collection(db, 'users', userId, 'drafts'), 'current');
         await setDoc(draftRef, {
-          content: draft,
-          refinedContent: refinedDraft,
+          content: mergedDraft,
+          refinedContent: mergedDraft,
           lastModified: serverTimestamp(),
-          wordCount: draft.split(/\s+/).filter(w => w.length > 0).length
+          wordCount: mergedDraft.split(/\s+/).filter(w => w.length > 0).length
         });
       } catch (firebaseError) {
         console.error('Firebase save error:', firebaseError);
         // Continue even if Firebase fails
       }
 
-      // 5. Analyze draft and extract elements
-      setSaveNotification('Analyzing content...');
+      // 7. Analyze NEW content and extract elements
+      setSaveNotification('Analyzing new content...');
       const elements = await analyzeDraftForElements(draft);
       
       // Merge with existing content (don't replace, add new ones)
@@ -160,10 +185,13 @@ const Writing = () => {
         window.dispatchEvent(new Event('storage'));
       }
 
-      setSaveNotification('✅ Saved successfully!');
-      setTimeout(() => setSaveNotification(''), 3000);
+      const addedCount = (newCharacters.length || 0) + (newPlaces.length || 0) + (newEvents.length || 0);
+      const wordCount = draft.split(/\s+/).filter(w => w.length > 0).length;
       
-      // Clear the writing area for a new section
+      setSaveNotification(`✅ Saved ${wordCount} words${addedCount > 0 ? `, added ${addedCount} new items` : ''}!`);
+      setTimeout(() => setSaveNotification(''), 4000);
+      
+      // Clear the writing area
       setDraft('');
 
     } catch (error) {
@@ -215,27 +243,53 @@ const Writing = () => {
       <h2>✏️ Writing Space</h2>
       
       <div className="writing-controls">
-        {!fileLinked && (
-          <button onClick={handleSelectFile} className="link-file-btn" style={{
-            backgroundColor: 'var(--burgundy)',
-            color: 'var(--neon-yellow)',
-            border: '2px solid var(--neon-yellow)',
-            fontWeight: 'bold',
-            textShadow: 'none'
-          }}>
-            📎 Link book-draft.txt
-          </button>
+        {!sessionActive ? (
+          <>
+            {!fileLinked && (
+              <button onClick={handleSelectFile} className="link-file-btn" style={{
+                backgroundColor: 'var(--burgundy)',
+                color: 'var(--neon-yellow)',
+                border: '2px solid var(--neon-yellow)',
+                fontWeight: 'bold',
+                textShadow: 'none'
+              }}>
+                📎 Link book-draft.txt
+              </button>
+            )}
+            <button onClick={beginSession} className="begin-session-btn" style={{
+              backgroundColor: 'var(--neon-green)',
+              color: 'var(--dark-brown)',
+              border: '2px solid var(--neon-green)',
+              fontWeight: 'bold',
+              fontSize: '1.1em',
+              padding: '12px 24px',
+              textShadow: 'none'
+            }}>
+              ▶️ Begin Session
+            </button>
+          </>
+        ) : (
+          <>
+            <button onClick={endSession} className="end-session-btn" disabled={isSaving} style={{
+              backgroundColor: 'var(--neon-blue)',
+              color: 'var(--dark-brown)',
+              border: '2px solid var(--neon-blue)',
+              fontWeight: 'bold',
+              fontSize: '1.1em',
+              padding: '12px 24px',
+              textShadow: 'none'
+            }}>
+              {isSaving ? '💫 Saving & Ending...' : '⏹️ End Session & Save'}
+            </button>
+            <button 
+              onClick={handleReview} 
+              disabled={isReviewing || !draft || isSaving}
+              className="review-btn"
+            >
+              {isReviewing ? '🤔 Reviewing...' : '🤖 AI Review'}
+            </button>
+          </>
         )}
-        <button onClick={saveDraft} className="save-btn" disabled={isSaving || !draft}>
-          {isSaving ? '💫 Saving...' : fileLinked ? '💾 Save & Update File' : '💾 Save Now'}
-        </button>
-        <button 
-          onClick={handleReview} 
-          disabled={isReviewing || !draft || isSaving}
-          className="review-btn"
-        >
-          {isReviewing ? '🤔 Reviewing...' : '🤖 AI Review'}
-        </button>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '15px' }}>
           {saveNotification && (
             <span className="save-notification" style={{ 
@@ -257,12 +311,42 @@ const Writing = () => {
         </div>
       </div>
 
-      <textarea
-        className="writing-area"
-        placeholder="Begin your epic tale here..."
-        value={draft}
-        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDraft(e.target.value)}
-      />
+      {sessionActive ? (
+        <textarea
+          className="writing-area"
+          placeholder="Begin your epic tale here... (Session active - changes are temporary until you end the session)"
+          value={draft}
+          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDraft(e.target.value)}
+        />
+      ) : (
+        <div className="session-placeholder" style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '400px',
+          border: '2px dashed var(--brass)',
+          borderRadius: '8px',
+          padding: '40px',
+          textAlign: 'center',
+          color: 'var(--text-secondary)'
+        }}>
+          <h3 style={{ color: 'var(--neon-yellow)', fontFamily: 'Bebas Neue, sans-serif', fontSize: '2em', marginBottom: '20px' }}>
+            Ready to Write?
+          </h3>
+          <p style={{ fontSize: '1.2em', marginBottom: '15px' }}>
+            Click "Begin Session" to start writing.
+          </p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.95em', maxWidth: '600px' }}>
+            Your work will be saved only when you end the session. The AI will merge your new content with existing work, avoiding duplicates.
+          </p>
+          {fileLinked && (
+            <p style={{ color: 'var(--neon-green)', marginTop: '20px', fontWeight: 'bold' }}>
+              ✓ book-draft.txt is linked and ready
+            </p>
+          )}
+        </div>
+      )}
 
       {reviewFeedback && (
         <div className="review-feedback">
