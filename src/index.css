@@ -563,6 +563,25 @@ h2::after {
 }
 
 /* --- Contents Page Styling --- */
+.auto-update-notice {
+    background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    box-shadow: 0 0 30px rgba(0, 217, 255, 0.3);
+    font-family: 'Courier Prime', monospace;
+}
+
+.auto-update-notice ul {
+    margin: 10px 0 0 20px;
+    padding: 0;
+}
+
+.auto-update-notice li {
+    margin: 5px 0;
+}
+
 .content-section {
     background: linear-gradient(135deg, var(--card-background) 0%, var(--surface-medium) 100%);
     padding: 30px;
@@ -1332,4 +1351,268 @@ button.bg-amber-600:disabled {
 
 .active\:scale-95:active {
     transform: scale(0.95);
+}
+
+/* ===========================
+   RESOURCES PAGE STYLES
+   =========================== */
+
+.resources-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px;
+}
+
+.resources-container h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3em;
+    color: var(--neon-yellow);
+    text-shadow: 0 0 20px rgba(255, 234, 0, 0.6);
+    margin-bottom: 10px;
+}
+
+.resources-container .subtitle {
+    color: var(--text-secondary);
+    font-size: 1.1em;
+    margin-bottom: 40px;
+}
+
+.upload-section {
+    background: var(--card-background);
+    padding: 30px;
+    border-radius: 8px;
+    border: 2px solid var(--neon-blue);
+    box-shadow: 0 0 30px rgba(0, 217, 255, 0.2);
+    margin-bottom: 40px;
+}
+
+.upload-controls {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.type-selector {
+    flex: 1;
+    padding: 12px 20px;
+    background: var(--surface-dark);
+    color: var(--text-primary);
+    border: 2px solid var(--neon-pink);
+    border-radius: 4px;
+    font-family: 'Courier Prime', monospace;
+    font-size: 1em;
+    cursor: pointer;
+}
+
+.upload-btn {
+    padding: 12px 30px;
+    background: linear-gradient(135deg, var(--neon-pink), var(--neon-purple));
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2em;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.upload-btn:hover:not(:disabled) {
+    box-shadow: 0 0 30px rgba(255, 0, 110, 0.6);
+    transform: translateY(-2px);
+}
+
+.upload-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.upload-hint {
+    color: var(--text-muted);
+    font-size: 0.9em;
+    font-style: italic;
+}
+
+.resources-list h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2em;
+    color: var(--neon-blue);
+    text-shadow: 0 0 15px rgba(0, 217, 255, 0.5);
+    margin-bottom: 20px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+    font-size: 1.1em;
+}
+
+.resources-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 25px;
+}
+
+.resource-card {
+    background: var(--card-background);
+    border: 2px solid var(--surface-medium);
+    border-radius: 8px;
+    padding: 20px;
+    transition: all 0.3s ease;
+}
+
+.resource-card:hover {
+    border-color: var(--neon-pink);
+    box-shadow: 0 0 25px rgba(255, 0, 110, 0.3);
+    transform: translateY(-2px);
+}
+
+.resource-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.resource-icon {
+    font-size: 2em;
+}
+
+.resource-header h3 {
+    flex: 1;
+    font-size: 1.2em;
+    color: var(--text-primary);
+    margin: 0;
+    word-break: break-word;
+}
+
+.delete-resource-btn {
+    width: 30px;
+    height: 30px;
+    background: rgba(255, 0, 0, 0.7);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.delete-resource-btn:hover {
+    background: rgba(255, 0, 0, 0.9);
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.6);
+}
+
+.resource-meta {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.resource-type {
+    background: var(--neon-purple);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.resource-date {
+    color: var(--text-muted);
+    font-size: 0.9em;
+}
+
+.resource-preview {
+    background: var(--surface-dark);
+    padding: 15px;
+    border-radius: 4px;
+    color: var(--text-secondary);
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
+    margin-bottom: 15px;
+    max-height: 120px;
+    overflow: hidden;
+}
+
+.view-full-btn {
+    width: 100%;
+    padding: 10px;
+    background: var(--surface-medium);
+    color: var(--neon-yellow);
+    border: 1px solid var(--neon-yellow);
+    border-radius: 4px;
+    font-family: 'Courier Prime', monospace;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.view-full-btn:hover {
+    background: var(--neon-yellow);
+    color: var(--dark-brown);
+}
+
+.resource-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+}
+
+.resource-modal .modal-content {
+    background: var(--card-background);
+    border: 2px solid var(--neon-blue);
+    border-radius: 8px;
+    max-width: 900px;
+    max-height: 90vh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.resource-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 2px solid var(--surface-medium);
+}
+
+.resource-modal .modal-header h2 {
+    color: var(--neon-yellow);
+    margin: 0;
+}
+
+.resource-modal .modal-header button {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 0, 0, 0.7);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.resource-modal .modal-body {
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.resource-modal .modal-body pre {
+    color: var(--text-primary);
+    font-family: 'Courier Prime', monospace;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.6;
 }

@@ -46,6 +46,15 @@ const Contents = () => {
 
   return (
     <div className="contents-container">
+      <div className="auto-update-notice">
+        ℹ️ This page automatically updates when you:
+        <ul>
+          <li>Save your writing (extracts characters, places, events)</li>
+          <li>Upload resources (summaries, chapters, outlines)</li>
+          <li>Use AI commands in the chatbot</li>
+        </ul>
+      </div>
+
       <section className="content-section">
         <h2>🎭 Characters</h2>
         <ul>
