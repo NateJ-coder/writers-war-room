@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Message, Role } from '../../types/chatbot';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
-import { getChatResponse } from '../../services/geminiService';
+import { getChatResponse, formatStickyNote } from '../../services/geminiService';
 import { getWebsiteContext, saveWebsiteContent } from '../../services/contentContext';
 import type { Note } from '../../types';
 
@@ -29,21 +29,23 @@ export const ChatbotWidget = ({ isOpen, onClose }: ChatbotWidgetProps) => {
     scrollToBottom();
   }, [messages]);
 
-  const executeCommand = (command: any) => {
+  const executeCommand = async (command: any) => {
     const context = getWebsiteContext();
     
     try {
       switch (command.action) {
         case 'add_note':
+          const formattedText = await formatStickyNote(command.text || 'New note');
           const newNote: Note = {
             id: `note-${Date.now()}`,
-            text: command.text || 'New note',
+            text: formattedText,
             timestamp: Date.now(),
             rotation: Math.random() * 6 - 3,
             x: 100 + Math.random() * 200,
             y: 100 + Math.random() * 200,
             type: 'text',
-            connections: []
+            connections: [],
+            boardId: 1
           };
           context.pinboardNotes.push(newNote);
           saveWebsiteContent({ pinboardNotes: context.pinboardNotes });
@@ -104,7 +106,9 @@ export const ChatbotWidget = ({ isOpen, onClose }: ChatbotWidgetProps) => {
       
       // Execute any commands returned by AI
       if (response.commands && response.commands.length > 0) {
-        response.commands.forEach(cmd => executeCommand(cmd));
+        for (const cmd of response.commands) {
+          await executeCommand(cmd);
+        }
       }
       
       const modelMessage: Message = { role: Role.MODEL, content: response.text, sources: response.sources };

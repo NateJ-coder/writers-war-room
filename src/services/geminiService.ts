@@ -287,3 +287,51 @@ ${draft.substring(0, 3000)}...`;
     return { characters: [], places: [], events: [] };
   }
 };
+
+// Format sticky note content with AI
+export const formatStickyNote = async (content: string): Promise<string> => {
+  if (!ai) {
+    throw new Error("Gemini API key not configured.");
+  }
+
+  const prompt = `Format this sticky note content to be concise and well-organized. Use:
+- <strong>bold</strong> for important words/names
+- <mark style="background: #ffeb3b;">highlighting</mark> for key points
+- <ul><li>bullet points</li></ul> for lists
+- Line breaks for readability
+
+Keep it SHORT and scannable. Return ONLY the formatted HTML (no explanations).
+
+Content: "${content}"`;
+
+  try {
+    const response: GenerateContentResponse = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{
+        role: 'user',
+        parts: [{ text: prompt }],
+      }],
+    });
+
+    return response.text ?? content;
+  } catch (error) {
+    console.error("Error formatting sticky note:", error);
+    return content;
+  }
+};
+
+// Search for images based on description (returns placeholder URLs for now)
+export const searchImages = async (query: string): Promise<string[]> => {
+  // Note: This is a placeholder. In a real implementation, you'd integrate with:
+  // - Unsplash API
+  // - Pexels API
+  // - Google Custom Search API
+  // For now, we'll return Unsplash placeholder URLs
+  
+  const encodedQuery = encodeURIComponent(query);
+  return [
+    `https://source.unsplash.com/800x600/?${encodedQuery}`,
+    `https://source.unsplash.com/800x600/?${encodedQuery},1`,
+    `https://source.unsplash.com/800x600/?${encodedQuery},2`
+  ];
+};

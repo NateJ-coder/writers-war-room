@@ -5,9 +5,12 @@ export interface Note {
   rotation: number;
   x?: number;
   y?: number;
-  type?: 'text' | 'image';
+  type?: 'text' | 'image' | 'ai-image';
   imageUrl?: string;
   connections?: string[]; // Array of note IDs this note is connected to
+  boardId?: number; // Which board (1-4) this note belongs to
+  selected?: boolean; // For multi-select operations
+  annotations?: string; // For image annotations/edits
 }
 
 export interface Character {
