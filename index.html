@@ -4,18 +4,14 @@
   <meta charset="UTF-8" />
   <title>Writer's War Room</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📝</text></svg>">
   <link rel="stylesheet" href="index.css">
 </head>
 <body>
   
   <script type="module">
-    // Import the functions you need from the SDKs you need
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-    // TODO: Add SDKs for Firebase products that you want to use
-    // https://firebase.google.com/docs/web/setup#available-libraries
-
-    // Your web app's Firebase configuration
-    const firebaseConfig = {
+    // Make Firebase config available globally for other modules
+    window.__firebaseConfig = {
       apiKey: "AIzaSyBHo3T6TRjInJ2pBkHNXdMbStY_ec7aRM8",
       authDomain: "writer-s-war-room.firebaseapp.com",
       projectId: "writer-s-war-room",
@@ -23,9 +19,6 @@
       messagingSenderId: "827308712794",
       appId: "1:827308712794:web:b11cf4c42bbdf483f9c963"
     };
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
   </script>
 
   <script type="module" src="firebase-config.js"></script>

@@ -1,16 +1,24 @@
 // firebase-config.js
 // Firebase configuration and initialization module
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import { 
   getFirestore, doc, onSnapshot, collection, query, orderBy, 
   addDoc, serverTimestamp, setDoc, getDoc, setLogLevel 
-} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-// Initialize Firebase configuration variables
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+// Get Firebase configuration from window (set in index.html)
+const firebaseConfig = window.__firebaseConfig || {
+  apiKey: "AIzaSyBHo3T6TRjInJ2pBkHNXdMbStY_ec7aRM8",
+  authDomain: "writer-s-war-room.firebaseapp.com",
+  projectId: "writer-s-war-room",
+  storageBucket: "writer-s-war-room.firebasestorage.app",
+  messagingSenderId: "827308712794",
+  appId: "1:827308712794:web:b11cf4c42bbdf483f9c963"
+};
+
+const appId = 'default-app-id';
 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
 // Firebase services
