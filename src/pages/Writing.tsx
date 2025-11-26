@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { refineBookDraft, analyzeDraftForElements } from '../services/geminiService';
-import { saveWebsiteContent, downloadBookDraft, getWebsiteContext } from '../services/contentContext';
+import { saveWebsiteContent, updateBookDraftFile, selectExistingBookDraft, getWebsiteContext } from '../services/contentContext';
 import { getDb, collection, doc, setDoc, serverTimestamp } from '../services/firebase';
 
 const Writing = () => {
@@ -10,6 +10,7 @@ const Writing = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveNotification, setSaveNotification] = useState('');
   const [reviewFeedback, setReviewFeedback] = useState('');
+  const [fileLinked, setFileLinked] = useState(false);
   const autoSaveTimerRef = useRef<number | null>(null);
 
   // Load draft from localStorage on mount
@@ -46,6 +47,21 @@ const Writing = () => {
     };
   }, [draft]);
 
+  const handleSelectFile = async () => {
+    try {
+      const selected = await selectExistingBookDraft();
+      if (selected) {
+        setFileLinked(true);
+        setSaveNotification('✅ File linked successfully!');
+        setTimeout(() => setSaveNotification(''), 3000);
+      }
+    } catch (error) {
+      console.error('Error selecting file:', error);
+      setSaveNotification('❌ Failed to select file');
+      setTimeout(() => setSaveNotification(''), 3000);
+    }
+  };
+
   const saveDraft = async () => {
     if (!draft.trim()) return;
     
@@ -66,10 +82,22 @@ const Writing = () => {
       // Save refined draft to localStorage
       saveWebsiteContent({ refinedBookDraft: refinedDraft });
       
-      // 3. Download as book-draft.txt
-      downloadBookDraft(refinedDraft);
+      // 3. Update book-draft.txt file
+      setSaveNotification('Updating book-draft.txt...');
+      const fileUpdated = await updateBookDraftFile(refinedDraft);
+      
+      if (!fileUpdated) {
+        // If file update failed, prompt user to select file
+        setSaveNotification('⚠️ Please select book-draft.txt file first');
+        setTimeout(() => setSaveNotification(''), 5000);
+        setIsSaving(false);
+        return;
+      }
+      
+      setFileLinked(true);
 
       // 4. Save to Firebase
+      setSaveNotification('Backing up to cloud...');
       try {
         const db = getDb();
         const userId = 'default-user'; // Replace with actual user ID when auth is implemented
@@ -174,8 +202,17 @@ const Writing = () => {
       <h2>✏️ Writing Space</h2>
       
       <div className="writing-controls">
+        {!fileLinked && (
+          <button onClick={handleSelectFile} className="link-file-btn" style={{
+            backgroundColor: 'var(--neon-yellow)',
+            color: 'var(--burgundy)',
+            fontWeight: 'bold'
+          }}>
+            📎 Link book-draft.txt
+          </button>
+        )}
         <button onClick={saveDraft} className="save-btn" disabled={isSaving || !draft}>
-          {isSaving ? '💫 Saving...' : '💾 Save Now'}
+          {isSaving ? '💫 Saving...' : fileLinked ? '💾 Save & Update File' : '💾 Save Now'}
         </button>
         <button 
           onClick={handleReview} 

@@ -144,15 +144,83 @@ export const saveWebsiteContent = (context: Partial<WebsiteContext>): void => {
   }
 };
 
-// Download refined book draft as a .txt file
-export const downloadBookDraft = (content: string, filename: string = 'book-draft.txt'): void => {
-  const blob = new Blob([content], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+// Update the book-draft.txt file using File System Access API
+export const updateBookDraftFile = async (content: string): Promise<boolean> => {
+  try {
+    // Check if File System Access API is supported
+    if ('showSaveFilePicker' in window) {
+      // Get reference to the file (user will be prompted first time, then remembered)
+      const fileHandle = await getBookDraftFileHandle();
+      
+      if (fileHandle) {
+        const writable = await fileHandle.createWritable();
+        await writable.write(content);
+        await writable.close();
+        return true;
+      }
+    }
+    
+    // Fallback: just store in localStorage
+    localStorage.setItem('refined-book-draft', content);
+    console.warn('File System Access API not available, saved to localStorage only');
+    return false;
+  } catch (error) {
+    console.error('Error updating book draft file:', error);
+    // Still save to localStorage as backup
+    localStorage.setItem('refined-book-draft', content);
+    return false;
+  }
+};
+
+// Get or request file handle for book-draft.txt
+let cachedFileHandle: any = null;
+
+const getBookDraftFileHandle = async (): Promise<any> => {
+  // Return cached handle if available
+  if (cachedFileHandle) {
+    return cachedFileHandle;
+  }
+
+  try {
+    // Request user to select/create the book-draft.txt file
+    const handle = await (window as any).showSaveFilePicker({
+      suggestedName: 'book-draft.txt',
+      types: [{
+        description: 'Text Files',
+        accept: { 'text/plain': ['.txt'] },
+      }],
+    });
+    
+    cachedFileHandle = handle;
+    return handle;
+  } catch (error) {
+    // User cancelled or API not supported
+    console.log('File handle not obtained:', error);
+    return null;
+  }
+};
+
+// Allow user to manually select the existing book-draft.txt file
+export const selectExistingBookDraft = async (): Promise<boolean> => {
+  try {
+    const [fileHandle] = await (window as any).showOpenFilePicker({
+      types: [{
+        description: 'Text Files',
+        accept: { 'text/plain': ['.txt'] },
+      }],
+      multiple: false,
+    });
+    
+    cachedFileHandle = fileHandle;
+    
+    // Read the existing content and store it
+    const file = await fileHandle.getFile();
+    const content = await file.text();
+    localStorage.setItem('refined-book-draft', content);
+    
+    return true;
+  } catch (error) {
+    console.error('Error selecting file:', error);
+    return false;
+  }
 };
