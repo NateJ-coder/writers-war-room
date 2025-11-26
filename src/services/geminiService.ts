@@ -19,19 +19,25 @@ export const getChatResponse = async (history: Message[]): Promise<{ text: strin
   try {
     const model = 'gemini-2.5-flash';
     
-    // Format history for the API
-    const contents: Content[] = history.map(msg => ({
-      role: msg.role === Role.USER ? 'user' : 'model',
-      parts: [{ text: msg.content }],
-    }));
+    // Format history for the API, prepending system instruction as first message
+    const contents: Content[] = [
+      {
+        role: 'user',
+        parts: [{ text: SYSTEM_INSTRUCTION }],
+      },
+      {
+        role: 'model',
+        parts: [{ text: 'I understand. I will help you with writing assistance.' }],
+      },
+      ...history.map(msg => ({
+        role: msg.role === Role.USER ? 'user' : 'model',
+        parts: [{ text: msg.content }],
+      }))
+    ];
 
     const response: GenerateContentResponse = await ai.models.generateContent({
       model: model,
       contents: contents,
-      systemInstruction: {
-        role: 'model',
-        parts: [{text: SYSTEM_INSTRUCTION}]
-      },
       config: {
         tools: [{ googleSearch: {} }],
       },
