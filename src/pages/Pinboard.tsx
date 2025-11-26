@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import type { Note } from '../types';
 import { getChatResponse } from '../services/geminiService';
 import { Role } from '../types/chatbot';
-import ThreeLineConnector from '../components/ThreeLineConnector';
+import { RedStringAnimation, StickyNote } from '../sticky-notes';
+import '../sticky-notes/sticky-notes.css';
 
 const Pinboard = () => {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -223,6 +224,7 @@ const Pinboard = () => {
     const note = notes.find(n => n.id === noteId);
     if (!note || note.x === undefined || note.y === undefined) return;
 
+    // Position relative to the note (thumbtack is at center-top)
     const thumbtackX = note.x + 110;
     const thumbtackY = note.y + 16;
 
@@ -279,16 +281,16 @@ const Pinboard = () => {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
-        {/* Taut red string connections */}
-        <ThreeLineConnector 
+        {/* Red string connections */}
+        <RedStringAnimation 
           connections={notes.flatMap(note => 
             (note.connections || []).map(connId => {
               const targetNote = notes.find(n => n.id === connId);
               if (targetNote && note.x !== undefined && note.y !== undefined && targetNote.x !== undefined && targetNote.y !== undefined) {
                 return {
                   id: `${note.id}-${connId}`,
-                  point1: [note.x + 110, note.y + 16, 0] as [number, number, number], // Thumbtack position
-                  point2: [targetNote.x + 110, targetNote.y + 16, 0] as [number, number, number] // Target thumbtack
+                  point1: [note.x + 110, note.y + 16] as [number, number], // Thumbtack position
+                  point2: [targetNote.x + 110, targetNote.y + 16] as [number, number] // Target thumbtack
                 };
               }
               return null;
@@ -297,102 +299,43 @@ const Pinboard = () => {
         />
 
         {notes.map((note: Note) => (
-          <div
+          <StickyNote
             key={note.id}
-            className={`sticky-note ${note.type === 'image' ? 'image-note' : ''}`}
-            onMouseDown={(e) => handleMouseDown(e, note)}
-            style={{ 
-              transform: `rotate(${note.rotation}deg)`,
-              left: `${note.x}px`,
-              top: `${note.y}px`,
-              cursor: 'move'
+            note={note}
+            onMouseDown={handleMouseDown}
+            onUpdateNote={updateNote}
+            onDeleteNote={deleteNote}
+            onRefineNote={refineNote}
+            onThumbTackMouseDown={handleThumbTackMouseDown}
+            isAiProcessing={isAiProcessing}
+          />
+        ))}
+
+        {/* Drawing line preview */}
+        {drawingConnection && (
+          <svg 
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              pointerEvents: 'none',
+              zIndex: 1000
             }}
           >
-            {/* Clickable thumbtack for drawing connections */}
-            <div 
-              className="thumbtack" 
-              onMouseDown={(e) => handleThumbTackMouseDown(e, note.id)}
-              style={{
-                position: 'absolute',
-                top: '0',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: '20px',
-                height: '20px',
-                cursor: 'crosshair',
-                zIndex: 10
-              }}
+            <line 
+              x1={drawingConnection.startX}
+              y1={drawingConnection.startY}
+              x2={hoveredThumbTack ? notes.find(n => n.id === hoveredThumbTack)!.x! + 110 : mousePos.x}
+              y2={hoveredThumbTack ? notes.find(n => n.id === hoveredThumbTack)!.y! + 16 : mousePos.y}
+              stroke={hoveredThumbTack ? '#00ff00' : '#ff006e'}
+              strokeWidth="2"
+              strokeDasharray="5,5"
             />
-            <div className="note-actions">
-              <button 
-                className="refine-note" 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  refineNote(note.id);
-                }}
-                title="AI Refine"
-                disabled={isAiProcessing || note.type === 'image'}
-              >
-                ✨
-              </button>
-              <button 
-                className="delete-note" 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteNote(note.id);
-                }}
-                title="Delete Note"
-              >
-                ×
-              </button>
-            </div>
-
-            {note.type === 'image' && note.imageUrl ? (
-              <div className="note-image-container">
-                <img src={note.imageUrl} alt={note.text} className="note-image" />
-                <div className="note-image-label">{note.text}</div>
-              </div>
-            ) : (
-              <div
-                className="note-content"
-                contentEditable
-                suppressContentEditableWarning
-                onBlur={(e) => updateNote(note.id, e.currentTarget.textContent || '')}
-                dangerouslySetInnerHTML={{ __html: note.text }}
-              />
-            )}
-
-            <div className="note-timestamp">
-              {new Date(note.timestamp).toLocaleTimeString()}
-            </div>
-          </div>
-        ))}
+          </svg>
+        )}
       </div>
-
-      {/* Drawing line preview */}
-      {drawingConnection && (
-        <svg 
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            pointerEvents: 'none',
-            zIndex: 1000
-          }}
-        >
-          <line 
-            x1={drawingConnection.startX}
-            y1={drawingConnection.startY}
-            x2={hoveredThumbTack ? notes.find(n => n.id === hoveredThumbTack)!.x! + 110 : mousePos.x}
-            y2={hoveredThumbTack ? notes.find(n => n.id === hoveredThumbTack)!.y! + 16 : mousePos.y}
-            stroke={hoveredThumbTack ? '#00ff00' : '#ff006e'}
-            strokeWidth="2"
-            strokeDasharray="5,5"
-          />
-        </svg>
-      )}
     </div>
   );
 };
