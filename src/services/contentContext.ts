@@ -144,65 +144,18 @@ export const saveWebsiteContent = (context: Partial<WebsiteContext>): void => {
   }
 };
 
-// Update the book-draft.txt file using File System Access API
-export const updateBookDraftFile = async (content: string): Promise<boolean> => {
-  try {
-    // Check if File System Access API is supported
-    if ('showSaveFilePicker' in window) {
-      // Get reference to the file (user will be prompted first time, then remembered)
-      const fileHandle = await getBookDraftFileHandle();
-      
-      if (fileHandle) {
-        const writable = await fileHandle.createWritable();
-        await writable.write(content);
-        await writable.close();
-        return true;
-      }
-    }
-    
-    // Fallback: just store in localStorage
-    localStorage.setItem('refined-book-draft', content);
-    console.warn('File System Access API not available, saved to localStorage only');
-    return false;
-  } catch (error) {
-    console.error('Error updating book draft file:', error);
-    // Still save to localStorage as backup
-    localStorage.setItem('refined-book-draft', content);
-    return false;
-  }
-};
-
-// Get or request file handle for book-draft.txt
+// Cache for file handle
 let cachedFileHandle: any = null;
-
-const getBookDraftFileHandle = async (): Promise<any> => {
-  // Return cached handle if available
-  if (cachedFileHandle) {
-    return cachedFileHandle;
-  }
-
-  try {
-    // Request user to select/create the book-draft.txt file
-    const handle = await (window as any).showSaveFilePicker({
-      suggestedName: 'book-draft.txt',
-      types: [{
-        description: 'Text Files',
-        accept: { 'text/plain': ['.txt'] },
-      }],
-    });
-    
-    cachedFileHandle = handle;
-    return handle;
-  } catch (error) {
-    // User cancelled or API not supported
-    console.log('File handle not obtained:', error);
-    return null;
-  }
-};
 
 // Allow user to manually select the existing book-draft.txt file
 export const selectExistingBookDraft = async (): Promise<boolean> => {
   try {
+    // Check if File System Access API is supported
+    if (!('showOpenFilePicker' in window)) {
+      console.warn('File System Access API not supported');
+      return false;
+    }
+
     const [fileHandle] = await (window as any).showOpenFilePicker({
       types: [{
         description: 'Text Files',
@@ -211,7 +164,18 @@ export const selectExistingBookDraft = async (): Promise<boolean> => {
       multiple: false,
     });
     
+    // Request permission to write
+    const permission = await fileHandle.requestPermission({ mode: 'readwrite' });
+    if (permission !== 'granted') {
+      console.error('Write permission not granted');
+      return false;
+    }
+    
+    // Cache the file handle for future writes
     cachedFileHandle = fileHandle;
+    
+    // Store that we have a linked file
+    localStorage.setItem('file-linked', 'true');
     
     // Read the existing content and store it
     const file = await fileHandle.getFile();
@@ -221,6 +185,53 @@ export const selectExistingBookDraft = async (): Promise<boolean> => {
     return true;
   } catch (error) {
     console.error('Error selecting file:', error);
+    return false;
+  }
+};
+
+// Check if file is already linked
+export const isFileLinked = (): boolean => {
+  return localStorage.getItem('file-linked') === 'true' && cachedFileHandle !== null;
+};
+
+// Update the book-draft.txt file using File System Access API
+export const updateBookDraftFile = async (content: string): Promise<boolean> => {
+  try {
+    // Check if we have a cached file handle
+    if (!cachedFileHandle) {
+      console.warn('No file handle cached - user needs to link file first');
+      return false;
+    }
+    
+    // Verify permission
+    const permission = await cachedFileHandle.queryPermission({ mode: 'readwrite' });
+    if (permission !== 'granted') {
+      // Try to request permission again
+      const newPermission = await cachedFileHandle.requestPermission({ mode: 'readwrite' });
+      if (newPermission !== 'granted') {
+        console.error('Write permission denied');
+        cachedFileHandle = null;
+        localStorage.removeItem('file-linked');
+        return false;
+      }
+    }
+    
+    // Write to the file
+    const writable = await cachedFileHandle.createWritable();
+    await writable.write(content);
+    await writable.close();
+    
+    // Also save to localStorage as backup
+    localStorage.setItem('refined-book-draft', content);
+    
+    return true;
+  } catch (error) {
+    console.error('Error updating book draft file:', error);
+    // Reset the cached handle if there was an error
+    cachedFileHandle = null;
+    localStorage.removeItem('file-linked');
+    // Still save to localStorage as backup
+    localStorage.setItem('refined-book-draft', content);
     return false;
   }
 };

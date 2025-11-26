@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { refineBookDraft, analyzeDraftForElements } from '../services/geminiService';
-import { saveWebsiteContent, updateBookDraftFile, selectExistingBookDraft, getWebsiteContext } from '../services/contentContext';
+import { saveWebsiteContent, updateBookDraftFile, selectExistingBookDraft, isFileLinked, getWebsiteContext } from '../services/contentContext';
 import { getDb, collection, doc, setDoc, serverTimestamp } from '../services/firebase';
 
 const Writing = () => {
@@ -23,6 +23,8 @@ const Writing = () => {
     if (savedTime) {
       setLastSaved(new Date(savedTime));
     }
+    // Check if file is already linked
+    setFileLinked(isFileLinked());
   }, []);
 
   // Auto-save effect
@@ -49,16 +51,20 @@ const Writing = () => {
 
   const handleSelectFile = async () => {
     try {
+      setSaveNotification('📁 Select your book-draft.txt file...');
       const selected = await selectExistingBookDraft();
       if (selected) {
         setFileLinked(true);
         setSaveNotification('✅ File linked successfully!');
         setTimeout(() => setSaveNotification(''), 3000);
+      } else {
+        setSaveNotification('❌ Failed to link file - please try again');
+        setTimeout(() => setSaveNotification(''), 4000);
       }
     } catch (error) {
       console.error('Error selecting file:', error);
-      setSaveNotification('❌ Failed to select file');
-      setTimeout(() => setSaveNotification(''), 3000);
+      setSaveNotification('❌ Error linking file - ' + (error as Error).message);
+      setTimeout(() => setSaveNotification(''), 5000);
     }
   };
 
@@ -83,18 +89,22 @@ const Writing = () => {
       saveWebsiteContent({ refinedBookDraft: refinedDraft });
       
       // 3. Update book-draft.txt file
-      setSaveNotification('Updating book-draft.txt...');
-      const fileUpdated = await updateBookDraftFile(refinedDraft);
-      
-      if (!fileUpdated) {
-        // If file update failed, prompt user to select file
-        setSaveNotification('⚠️ Please select book-draft.txt file first');
-        setTimeout(() => setSaveNotification(''), 5000);
-        setIsSaving(false);
-        return;
+      if (fileLinked) {
+        setSaveNotification('Updating book-draft.txt...');
+        const fileUpdated = await updateBookDraftFile(refinedDraft);
+        
+        if (!fileUpdated) {
+          // If file update failed, reset link status
+          setFileLinked(false);
+          setSaveNotification('⚠️ File link lost - please link file again');
+          setTimeout(() => setSaveNotification(''), 5000);
+          setIsSaving(false);
+          return;
+        }
+      } else {
+        // No file linked yet - skip file update but continue with other saves
+        console.log('No file linked - skipping file update');
       }
-      
-      setFileLinked(true);
 
       // 4. Save to Firebase
       setSaveNotification('Backing up to cloud...');
