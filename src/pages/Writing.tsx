@@ -152,6 +152,9 @@ const Writing = () => {
 
       setSaveNotification('✅ Saved successfully!');
       setTimeout(() => setSaveNotification(''), 3000);
+      
+      // Clear the writing area for a new section
+      setDraft('');
 
     } catch (error) {
       console.error('Error saving draft:', error);
@@ -204,9 +207,11 @@ const Writing = () => {
       <div className="writing-controls">
         {!fileLinked && (
           <button onClick={handleSelectFile} className="link-file-btn" style={{
-            backgroundColor: 'var(--neon-yellow)',
-            color: 'var(--burgundy)',
-            fontWeight: 'bold'
+            backgroundColor: 'var(--burgundy)',
+            color: 'var(--neon-yellow)',
+            border: '2px solid var(--neon-yellow)',
+            fontWeight: 'bold',
+            textShadow: 'none'
           }}>
             📎 Link book-draft.txt
           </button>
