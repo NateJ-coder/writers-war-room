@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { Note } from '../types';
 import { getChatResponse } from '../services/geminiService';
 import { Role } from '../types/chatbot';
+import ThreeRope from '../components/ThreeRope';
 
 const Pinboard = () => {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -224,86 +225,6 @@ const Pinboard = () => {
     ));
   };
 
-  // Render red strings between connected notes
-  const renderConnections = () => {
-    const lines: JSX.Element[] = [];
-    notes.forEach(note => {
-      note.connections?.forEach(connId => {
-        const targetNote = notes.find(n => n.id === connId);
-        if (targetNote && note.x !== undefined && note.y !== undefined && targetNote.x !== undefined && targetNote.y !== undefined) {
-          const x1 = note.x + 110; // Center of note
-          const y1 = note.y + 90;
-          const x2 = targetNote.x + 110;
-          const y2 = targetNote.y + 90;
-          
-          // Calculate control point for curved string (sag effect)
-          const midX = (x1 + x2) / 2;
-          const midY = (y1 + y2) / 2;
-          const distance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-          const sag = distance * 0.15; // 15% sag for natural droop
-          
-          // Perpendicular offset for natural droop
-          const angle = Math.atan2(y2 - y1, x2 - x1);
-          const controlX = midX + Math.sin(angle) * sag;
-          const controlY = midY - Math.cos(angle) * sag;
-          
-          const pathData = `M ${x1} ${y1} Q ${controlX} ${controlY} ${x2} ${y2}`;
-          
-          lines.push(
-            <g key={`${note.id}-${connId}`}>
-              {/* Shadow for depth */}
-              <path
-                d={pathData}
-                stroke="rgba(0, 0, 0, 0.3)"
-                strokeWidth="4"
-                fill="none"
-                transform="translate(2, 2)"
-                style={{ filter: 'blur(2px)', pointerEvents: 'none' }}
-              />
-              {/* Main string */}
-              <path
-                d={pathData}
-                stroke="#dc143c"
-                strokeWidth="2.5"
-                fill="none"
-                strokeLinecap="round"
-                style={{ cursor: 'pointer' }}
-                onClick={() => removeConnection(note.id, connId)}
-              >
-                <animateTransform
-                  attributeName="transform"
-                  type="translate"
-                  values="0,0; 0.5,-0.3; 0,0; -0.5,0.3; 0,0"
-                  dur="4s"
-                  repeatCount="indefinite"
-                />
-              </path>
-              {/* Highlight strand for texture */}
-              <path
-                d={pathData}
-                stroke="rgba(255, 100, 120, 0.5)"
-                strokeWidth="1"
-                fill="none"
-                strokeDasharray="2,3"
-                strokeLinecap="round"
-                style={{ pointerEvents: 'none' }}
-              >
-                <animateTransform
-                  attributeName="transform"
-                  type="translate"
-                  values="0,0; 0.5,-0.3; 0,0; -0.5,0.3; 0,0"
-                  dur="4s"
-                  repeatCount="indefinite"
-                />
-              </path>
-            </g>
-          );
-        }
-      });
-    });
-    return lines;
-  };
-
   return (
     <div className="pinboard-container">
       <div className="pinboard-actions">
@@ -344,11 +265,28 @@ const Pinboard = () => {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
-        <svg className="connection-layer" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
-          <g style={{ pointerEvents: 'auto' }}>
-            {renderConnections()}
-          </g>
-        </svg>
+        {/* 3D Rope connections */}
+        <ThreeRope 
+          connections={notes.flatMap(note => 
+            (note.connections || []).map(connId => {
+              const targetNote = notes.find(n => n.id === connId);
+              if (targetNote && note.x !== undefined && note.y !== undefined && targetNote.x !== undefined && targetNote.y !== undefined) {
+                return {
+                  id: `${note.id}-${connId}`,
+                  x1: note.x + 110,
+                  y1: note.y + 16,
+                  x2: targetNote.x + 110,
+                  y2: targetNote.y + 16
+                };
+              }
+              return null;
+            }).filter((conn): conn is NonNullable<typeof conn> => conn !== null)
+          )}
+          onConnectionClick={(id) => {
+            const [fromId, toId] = id.split('-');
+            removeConnection(fromId, toId);
+          }}
+        />
 
         {notes.map((note: Note) => (
           <div
