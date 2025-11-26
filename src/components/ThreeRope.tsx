@@ -160,9 +160,9 @@ const ThreeRope = ({ connections }: ThreeRopeProps) => {
       const x = x1 + (x2 - x1) * t;
       const y = y1 + (y2 - y1) * t;
       
-      // Initialize with slight sag for natural look
+      // Initialize with minimal sag for taut starting position
       const midPoint = numSegments / 2;
-      const sagAmount = i === 0 || i === numSegments ? 0 : Math.sin((i / numSegments) * Math.PI) * 8;
+      const sagAmount = i === 0 || i === numSegments ? 0 : Math.sin((i / numSegments) * Math.PI) * 1;
       
       segments.push({
         position: new THREE.Vector3(x, y + sagAmount, 0),
@@ -204,8 +204,8 @@ const ThreeRope = ({ connections }: ThreeRopeProps) => {
   };
 
   const simulateRope = (segments: RopeSegment[]) => {
-    const gravity = new THREE.Vector3(0, 0.02, 0); // Very subtle gravity
-    const damping = 0.95; // More damping for stability
+    const gravity = new THREE.Vector3(0, 0.001, 0); // Minimal gravity for taut rope
+    const damping = 0.98; // High damping to eliminate bounce
 
     // Verlet integration
     segments.forEach(segment => {
@@ -217,7 +217,7 @@ const ThreeRope = ({ connections }: ThreeRopeProps) => {
     });
 
     // Constraint iterations for string stiffness
-    const iterations = 8; // More iterations for tighter rope
+    const iterations = 30; // High iteration count for very stiff rope
     for (let iter = 0; iter < iterations; iter++) {
       for (let i = 0; i < segments.length - 1; i++) {
         const seg1 = segments[i];
