@@ -1,7 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
-import './index.css'
+import './styles/index.css'
 
 // Initialize default content if not exists
 if (!localStorage.getItem('characters-data')) {

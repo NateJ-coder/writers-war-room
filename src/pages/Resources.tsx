@@ -223,14 +223,14 @@ Return as structured JSON.`;
           <input
             ref={fileInputRef}
             type="file"
-            accept=".txt,.csv,.md,.doc,.docx"
+            accept=".txt,.csv,.md,.doc,.docx,.xlsx,.xls"
             style={{ display: 'none' }}
             onChange={handleFileUpload}
           />
         </div>
         
         <p className="upload-hint">
-          Supported formats: .txt, .csv, .md, .doc, .docx
+          Supported formats: .txt, .csv, .md, .doc, .docx, .xlsx, .xls
         </p>
       </div>
 

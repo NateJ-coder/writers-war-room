@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useState } from 'react';
-import Layout from './components/Layout';
+import Layout from './components/layout/Layout';
 import Pinboard from './pages/Pinboard';
 import Contents from './pages/Contents';
 import Outline from './pages/Outline';

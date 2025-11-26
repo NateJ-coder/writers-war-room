@@ -1,107 +1,115 @@
-# ✍️ Writer''s War-Room
+# Writer's War-Room ✍️
 
-Your Strategic Command Center for Crafting Epic Tales
+A vintage jazz-themed writing assistant application with AI-powered features for authors.
 
-## Features
+## ✨ Features
 
-- **📌 Pinboard**: Drag-and-drop sticky notes with timestamps and localStorage persistence
-- **📚 Contents**: Organize characters, places, and events
-- **📝 Outline**: Complete book outline with chapter structure
-- **✏️ Writing**: Writing space with auto-save every 30 seconds
-- **🤖 AI Assistant**: AI-powered chatbot for writing help using Google Gemini
+### 🎨 Vintage Jazz Aesthetic
+- 1950s/60s jazz bar design with neon signs
+- Wooden pinboard texture background  
+- Retro color palette with neon accents
 
-## Tech Stack
+### 📌 Interactive Pinboard
+- Drag-and-drop sticky notes
+- Click-and-drag thumbtacks to create red string connections
+- Auto-snap connections to nearby thumbtacks
+- Visual detective board for plot mapping
+- Image upload as sticky notes
 
-- React 18 + TypeScript
-- Vite 5
-- React Router 6
-- Google Gemini API
-- Firebase (configured)
-- Vercel deployment ready
+### 🤖 AI Integration (Gemini 2.5 Flash)
+- Full website context awareness
+- Refine sticky notes with AI
+- Sort notes chronologically
+- Extract characters/places/events automatically
+- Process uploaded resources (summaries, chapters, Excel files)
 
-## Getting Started
+### 💾 Data Persistence
+- localStorage for primary data
+- Firebase/Firestore for cloud backup
+- File System Access API for direct file updates
 
-### Prerequisites
+### 📚 Resources Page
+- Upload external files (summaries, chapters, spreadsheets)
+- AI-powered content extraction
+- Auto-updates Contents page
 
-- Node.js 16+
-- npm or yarn
+## 🚀 Setup
 
-### Installation
+1. **Clone the repository**
+   \\\ash
+   git clone https://github.com/NateJ-coder/writers-war-room.git
+   cd writers-war-room
+   \\\
 
-```bash
-# Install dependencies
-npm install
+2. **Install dependencies**
+   \\\ash
+   npm install
+   \\\
 
-# Create environment file
-cp .env.local.example .env.local
+3. **Configure environment variables**
+   Create a \.env.local\ file with your API keys:
+   \\\
+   VITE_GEMINI_API_KEY=your_gemini_api_key
+   VITE_FIREBASE_API_KEY=your_firebase_api_key
+   VITE_FIREBASE_PROJECT_ID=your_project_id
+   \\\
 
-# Add your Gemini API key to .env.local
-VITE_GEMINI_API_KEY=your_api_key_here
-```
+4. **Run development server**
+   \\\ash
+   npm run dev
+   \\\
 
-Get your API key from: https://ai.google.dev/
+5. **Build for production**
+   \\\ash
+   npm run build
+   \\\
 
-### Development
+## 📁 Project Structure
 
-```bash
-npm run dev
-```
+See [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) for detailed documentation.
 
-Open [http://localhost:3000](http://localhost:3000)
-
-### Build
-
-```bash
-npm run build
-```
-
-### Preview Production Build
-
-```bash
-npm run preview
-```
-
-## Deployment
-
-See [DEPLOYMENT_CHATBOT.md](./DEPLOYMENT_CHATBOT.md) for Vercel deployment instructions.
-
-### Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `VITE_GEMINI_API_KEY` | Google Gemini API key | Yes (for AI chatbot) |
-
-## Project Structure
-
-```
+\\\
 writers-war-room/
 ├── src/
-│   ├── components/
-│   │   ├── chatbot/       # Chat UI components
-│   │   └── Layout.tsx     # Main layout wrapper
-│   ├── pages/
-│   │   ├── Pinboard.tsx   # Sticky notes board
-│   │   ├── Contents.tsx   # Character/place/event lists
-│   │   ├── Outline.tsx    # Book outline
-│   │   ├── Writing.tsx    # Writing editor
-│   │   └── Chatbot.tsx    # AI assistant
-│   ├── services/
-│   │   ├── firebase.ts    # Firebase integration
-│   │   └── geminiService.ts # Gemini API calls
-│   ├── types/
-│   │   ├── index.ts       # Main type definitions
-│   │   └── chatbot.ts     # Chat type definitions
-│   ├── App.tsx            # Main app component
-│   ├── main.tsx           # Entry point
-│   └── index.css          # Global styles
-├── old-vanilla-version/   # Archived vanilla JS files
-└── chatbot/               # Original chatbot source (reference)
-```
+│   ├── assets/              # Images & textures
+│   ├── components/          # React components
+│   ├── pages/               # Main pages
+│   ├── services/            # API & business logic
+│   ├── sticky-notes/        # Modular sticky note system
+│   ├── styles/              # Global CSS
+│   └── types/               # TypeScript definitions
+├── docs/                    # Documentation & archived code
+├── public/                  # Static assets
+└── book-draft.txt           # Active book draft
+\\\
 
-## License
+## 🛠️ Technologies
+
+- **Frontend**: React 18.2.0 + TypeScript 5.2.2
+- **Build Tool**: Vite 5.0.8
+- **AI**: @google/genai 1.30.0 (Gemini 2.5 Flash)
+- **Database**: Firebase 10.7.1 (Firestore)
+- **Routing**: React Router
+- **Graphics**: SVG-based rendering
+
+## 🎯 Usage
+
+1. **Pinboard**: Create sticky notes, drag them around, and connect them with red strings
+2. **Contents**: View auto-extracted characters, places, and events
+3. **Outline**: Organize your story structure
+4. **Writing**: Write your book with AI-powered save and refinement
+5. **Resources**: Upload external files for AI extraction and analysis
+
+## 📝 Notes
+
+- Pinboard background image should be placed at \public/pinboard.jpeg\
+- Book drafts are saved to \ook-draft.txt\ in the project root
+- Old code versions are archived in the \docs/\ folder
+
+## �� License
 
 MIT
 
 ---
 
-**Empowering Authors, One Draft at a Time** 📖
+**Writer's War-Room** | Empowering Authors, One Draft at a Time
