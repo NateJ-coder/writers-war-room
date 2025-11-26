@@ -329,25 +329,11 @@ h2::after {
 
 .pinboard {
     position: relative;
-    min-height: 500px;
-    background: 
-        linear-gradient(135deg, rgba(139, 90, 43, 0.15) 0%, rgba(101, 67, 33, 0.2) 100%),
-        repeating-linear-gradient(
-            90deg,
-            #daa06d 0px,
-            #daa06d 1px,
-            #c19a6b 1px,
-            #c19a6b 3px
-        ),
-        repeating-linear-gradient(
-            0deg,
-            #d2b48c 0px,
-            #d2b48c 2px,
-            #bc9b7a 2px,
-            #bc9b7a 4px
-        ),
-        linear-gradient(180deg, #c19a6b 0%, #a67c52 100%);
-    background-size: 100%, 15px 100%, 100% 8px, 100%;
+    min-height: 800px;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    background: url('/pinboard.jpeg') center/cover;
     border: 8px solid #8b5a2b;
     border-radius: 4px;
     padding: 30px;
@@ -356,7 +342,6 @@ h2::after {
         inset 0 2px 4px rgba(255, 255, 255, 0.1),
         0 8px 30px rgba(0, 0, 0, 0.7),
         0 4px 8px rgba(0, 0, 0, 0.5);
-    position: relative;
 }
 
 .sticky-note {

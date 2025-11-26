@@ -8,9 +8,10 @@ const Pinboard = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [draggedNote, setDraggedNote] = useState<Note | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [connectingMode, setConnectingMode] = useState(false);
-  const [selectedNoteForConnection, setSelectedNoteForConnection] = useState<string | null>(null);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
+  const [drawingConnection, setDrawingConnection] = useState<{ noteId: string; startX: number; startY: number } | null>(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [hoveredThumbTack, setHoveredThumbTack] = useState<string | null>(null);
   const pinboardRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -160,7 +161,7 @@ const Pinboard = () => {
   const handleMouseDown = (e: React.MouseEvent, note: Note) => {
     if ((e.target as HTMLElement).classList.contains('delete-note') ||
         (e.target as HTMLElement).classList.contains('refine-note') ||
-        (e.target as HTMLElement).classList.contains('connect-note') ||
+        (e.target as HTMLElement).classList.contains('thumbtack') ||
         (e.target as HTMLElement).contentEditable === 'true') {
       return;
     }
@@ -174,47 +175,75 @@ const Pinboard = () => {
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!draggedNote || !pinboardRef.current) return;
+    if (!pinboardRef.current) return;
 
     const rect = pinboardRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left - dragOffset.x;
-    const y = e.clientY - rect.top - dragOffset.y;
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    
+    setMousePos({ x: mouseX, y: mouseY });
 
-    setNotes(notes.map(note =>
-      note.id === draggedNote.id ? { ...note, x, y } : note
-    ));
+    if (draggedNote) {
+      const x = mouseX - dragOffset.x;
+      const y = mouseY - dragOffset.y;
+      setNotes(notes.map(note =>
+        note.id === draggedNote.id ? { ...note, x, y } : note
+      ));
+    } else if (drawingConnection) {
+      // Check for nearby thumbtacks
+      const nearbyId = findNearbyThumbTack(mouseX, mouseY, drawingConnection.noteId);
+      setHoveredThumbTack(nearbyId);
+    }
   };
 
   const handleMouseUp = () => {
-    setDraggedNote(null);
-  };
-
-  const toggleConnectionMode = () => {
-    setConnectingMode(!connectingMode);
-    setSelectedNoteForConnection(null);
-  };
-
-  const handleNoteClick = (noteId: string) => {
-    if (!connectingMode) return;
-
-    if (!selectedNoteForConnection) {
-      setSelectedNoteForConnection(noteId);
-    } else {
-      // Create connection
-      if (selectedNoteForConnection !== noteId) {
-        setNotes(notes.map(note => {
-          if (note.id === selectedNoteForConnection) {
+    if (drawingConnection && hoveredThumbTack) {
+      // Create the connection
+      setNotes(notes.map(note => {
+        if (note.id === drawingConnection.noteId) {
+          const existingConnections = note.connections || [];
+          if (!existingConnections.includes(hoveredThumbTack)) {
             return {
               ...note,
-              connections: [...(note.connections || []), noteId]
+              connections: [...existingConnections, hoveredThumbTack]
             };
           }
-          return note;
-        }));
-      }
-      setSelectedNoteForConnection(null);
-      setConnectingMode(false);
+        }
+        return note;
+      }));
     }
+    
+    setDraggedNote(null);
+    setDrawingConnection(null);
+    setHoveredThumbTack(null);
+  };
+
+  const handleThumbTackMouseDown = (e: React.MouseEvent, noteId: string) => {
+    e.stopPropagation();
+    const note = notes.find(n => n.id === noteId);
+    if (!note || note.x === undefined || note.y === undefined) return;
+
+    const thumbtackX = note.x + 110;
+    const thumbtackY = note.y + 16;
+
+    setDrawingConnection({ noteId, startX: thumbtackX, startY: thumbtackY });
+  };
+
+  const findNearbyThumbTack = (x: number, y: number, excludeId: string): string | null => {
+    const snapDistance = 30; // pixels
+    
+    for (const note of notes) {
+      if (note.id === excludeId || note.x === undefined || note.y === undefined) continue;
+      
+      const thumbtackX = note.x + 110;
+      const thumbtackY = note.y + 16;
+      const distance = Math.sqrt(Math.pow(x - thumbtackX, 2) + Math.pow(y - thumbtackY, 2));
+      
+      if (distance < snapDistance) {
+        return note.id;
+      }
+    }
+    return null;
   };
 
   return (
@@ -225,13 +254,6 @@ const Pinboard = () => {
         </button>
         <button onClick={addImageNote} className="add-note-btn" disabled={isAiProcessing}>
           🖼️ Add Image
-        </button>
-        <button 
-          onClick={toggleConnectionMode} 
-          className={`sort-btn ${connectingMode ? 'active-mode' : ''}`}
-          disabled={isAiProcessing}
-        >
-          {connectingMode ? '✓ Connect Mode' : '🔗 Connect Notes'}
         </button>
         <button 
           onClick={sortChronologically} 
@@ -277,16 +299,30 @@ const Pinboard = () => {
         {notes.map((note: Note) => (
           <div
             key={note.id}
-            className={`sticky-note ${note.type === 'image' ? 'image-note' : ''} ${selectedNoteForConnection === note.id ? 'selected-for-connection' : ''}`}
+            className={`sticky-note ${note.type === 'image' ? 'image-note' : ''}`}
             onMouseDown={(e) => handleMouseDown(e, note)}
-            onClick={() => handleNoteClick(note.id)}
             style={{ 
               transform: `rotate(${note.rotation}deg)`,
               left: `${note.x}px`,
               top: `${note.y}px`,
-              cursor: connectingMode ? 'pointer' : 'move'
+              cursor: 'move'
             }}
           >
+            {/* Clickable thumbtack for drawing connections */}
+            <div 
+              className="thumbtack" 
+              onMouseDown={(e) => handleThumbTackMouseDown(e, note.id)}
+              style={{
+                position: 'absolute',
+                top: '0',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: '20px',
+                height: '20px',
+                cursor: 'crosshair',
+                zIndex: 10
+              }}
+            />
             <div className="note-actions">
               <button 
                 className="refine-note" 
@@ -333,12 +369,29 @@ const Pinboard = () => {
         ))}
       </div>
 
-      {connectingMode && (
-        <div className="connection-instructions">
-          {selectedNoteForConnection 
-            ? '📍 Click another note to connect them with a red string'
-            : '📍 Click a note to start connecting'}
-        </div>
+      {/* Drawing line preview */}
+      {drawingConnection && (
+        <svg 
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            pointerEvents: 'none',
+            zIndex: 1000
+          }}
+        >
+          <line 
+            x1={drawingConnection.startX}
+            y1={drawingConnection.startY}
+            x2={hoveredThumbTack ? notes.find(n => n.id === hoveredThumbTack)!.x! + 110 : mousePos.x}
+            y2={hoveredThumbTack ? notes.find(n => n.id === hoveredThumbTack)!.y! + 16 : mousePos.y}
+            stroke={hoveredThumbTack ? '#00ff00' : '#ff006e'}
+            strokeWidth="2"
+            strokeDasharray="5,5"
+          />
+        </svg>
       )}
     </div>
   );
