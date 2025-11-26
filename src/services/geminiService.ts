@@ -320,18 +320,48 @@ Content: "${content}"`;
   }
 };
 
-// Search for images based on description (returns placeholder URLs for now)
+// Search for images using Google Custom Search API
 export const searchImages = async (query: string): Promise<string[]> => {
-  // Note: This is a placeholder. In a real implementation, you'd integrate with:
-  // - Unsplash API
-  // - Pexels API
-  // - Google Custom Search API
-  // For now, we'll return Unsplash placeholder URLs
+  const apiKey = import.meta.env.VITE_GOOGLE_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
+  const searchEngineId = import.meta.env.VITE_GOOGLE_SEARCH_CX;
   
-  const encodedQuery = encodeURIComponent(query);
-  return [
-    `https://source.unsplash.com/800x600/?${encodedQuery}`,
-    `https://source.unsplash.com/800x600/?${encodedQuery},1`,
-    `https://source.unsplash.com/800x600/?${encodedQuery},2`
-  ];
+  if (!apiKey || !searchEngineId) {
+    console.error("Google API key or Search Engine ID not configured");
+    // Fallback to placeholder images
+    const encodedQuery = encodeURIComponent(query);
+    return [
+      `https://source.unsplash.com/800x600/?${encodedQuery}`,
+      `https://source.unsplash.com/800x600/?${encodedQuery},1`,
+      `https://source.unsplash.com/800x600/?${encodedQuery},2`
+    ];
+  }
+
+  try {
+    const encodedQuery = encodeURIComponent(query);
+    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodedQuery}&searchType=image&num=3`;
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Google Search API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // Extract image URLs from results
+    if (data.items && data.items.length > 0) {
+      return data.items.map((item: any) => item.link);
+    }
+    
+    // No results found, return empty array
+    return [];
+  } catch (error) {
+    console.error("Error searching images:", error);
+    // Fallback to placeholder images on error
+    const encodedQuery = encodeURIComponent(query);
+    return [
+      `https://source.unsplash.com/800x600/?${encodedQuery}`,
+      `https://source.unsplash.com/800x600/?${encodedQuery},1`,
+      `https://source.unsplash.com/800x600/?${encodedQuery},2`
+    ];
+  }
 };
