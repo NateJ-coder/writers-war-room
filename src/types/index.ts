@@ -3,6 +3,11 @@ export interface Note {
   text: string;
   timestamp: number;
   rotation: number;
+  x?: number;
+  y?: number;
+  type?: 'text' | 'image';
+  imageUrl?: string;
+  connections?: string[]; // Array of note IDs this note is connected to
 }
 
 export interface Character {
