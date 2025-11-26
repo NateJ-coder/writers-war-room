@@ -236,19 +236,67 @@ const Pinboard = () => {
           const x2 = targetNote.x + 110;
           const y2 = targetNote.y + 90;
           
+          // Calculate control point for curved string (sag effect)
+          const midX = (x1 + x2) / 2;
+          const midY = (y1 + y2) / 2;
+          const distance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+          const sag = distance * 0.15; // 15% sag for natural droop
+          
+          // Perpendicular offset for natural droop
+          const angle = Math.atan2(y2 - y1, x2 - x1);
+          const controlX = midX + Math.sin(angle) * sag;
+          const controlY = midY - Math.cos(angle) * sag;
+          
+          const pathData = `M ${x1} ${y1} Q ${controlX} ${controlY} ${x2} ${y2}`;
+          
           lines.push(
-            <line
-              key={`${note.id}-${connId}`}
-              x1={x1}
-              y1={y1}
-              x2={x2}
-              y2={y2}
-              stroke="#dc143c"
-              strokeWidth="3"
-              strokeDasharray="5,5"
-              style={{ cursor: 'pointer' }}
-              onClick={() => removeConnection(note.id, connId)}
-            />
+            <g key={`${note.id}-${connId}`}>
+              {/* Shadow for depth */}
+              <path
+                d={pathData}
+                stroke="rgba(0, 0, 0, 0.3)"
+                strokeWidth="4"
+                fill="none"
+                transform="translate(2, 2)"
+                style={{ filter: 'blur(2px)', pointerEvents: 'none' }}
+              />
+              {/* Main string */}
+              <path
+                d={pathData}
+                stroke="#dc143c"
+                strokeWidth="2.5"
+                fill="none"
+                strokeLinecap="round"
+                style={{ cursor: 'pointer' }}
+                onClick={() => removeConnection(note.id, connId)}
+              >
+                <animateTransform
+                  attributeName="transform"
+                  type="translate"
+                  values="0,0; 0.5,-0.3; 0,0; -0.5,0.3; 0,0"
+                  dur="4s"
+                  repeatCount="indefinite"
+                />
+              </path>
+              {/* Highlight strand for texture */}
+              <path
+                d={pathData}
+                stroke="rgba(255, 100, 120, 0.5)"
+                strokeWidth="1"
+                fill="none"
+                strokeDasharray="2,3"
+                strokeLinecap="round"
+                style={{ pointerEvents: 'none' }}
+              >
+                <animateTransform
+                  attributeName="transform"
+                  type="translate"
+                  values="0,0; 0.5,-0.3; 0,0; -0.5,0.3; 0,0"
+                  dur="4s"
+                  repeatCount="indefinite"
+                />
+              </path>
+            </g>
           );
         }
       });
