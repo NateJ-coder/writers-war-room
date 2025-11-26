@@ -37,9 +37,9 @@ const ThreeRope = ({ connections }: ThreeRopeProps) => {
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
-    // Setup orthographic camera for 2D overlay
+    // Setup orthographic camera for 2D overlay (match DOM coordinates)
     const camera = new THREE.OrthographicCamera(
-      0, width, 0, height, 0.1, 1000
+      0, width, height, 0, 0.1, 1000
     );
     camera.position.z = 10;
     cameraRef.current = camera;
@@ -150,20 +150,29 @@ const ThreeRope = ({ connections }: ThreeRopeProps) => {
   }, [connections]);
 
   const createRopeSegments = (x1: number, y1: number, x2: number, y2: number): RopeSegment[] => {
-    const numSegments = 20;
+    const numSegments = 10; // Fewer segments for better stability
     const segments: RopeSegment[] = [];
+    const totalDistance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+    const segmentLength = totalDistance / numSegments;
 
     for (let i = 0; i <= numSegments; i++) {
       const t = i / numSegments;
       const x = x1 + (x2 - x1) * t;
       const y = y1 + (y2 - y1) * t;
       
+      // Initialize with slight sag for natural look
+      const midPoint = numSegments / 2;
+      const sagAmount = i === 0 || i === numSegments ? 0 : Math.sin((i / numSegments) * Math.PI) * 8;
+      
       segments.push({
-        position: new THREE.Vector3(x, y, 0),
-        oldPosition: new THREE.Vector3(x, y, 0),
+        position: new THREE.Vector3(x, y + sagAmount, 0),
+        oldPosition: new THREE.Vector3(x, y + sagAmount, 0),
         fixed: i === 0 || i === numSegments
       });
     }
+    
+    // Store segment length for constraints
+    (segments as any).restLength = segmentLength;
 
     return segments;
   };
@@ -177,7 +186,7 @@ const ThreeRope = ({ connections }: ThreeRopeProps) => {
     const tubeGeometry = new THREE.TubeGeometry(
       curve,
       segments.length * 2, // segments
-      0.8, // radius (thin string)
+      1.2, // radius (thin string)
       8, // radial segments
       false // closed
     );
@@ -195,8 +204,8 @@ const ThreeRope = ({ connections }: ThreeRopeProps) => {
   };
 
   const simulateRope = (segments: RopeSegment[]) => {
-    const gravity = new THREE.Vector3(0, -0.5, 0);
-    const damping = 0.99;
+    const gravity = new THREE.Vector3(0, 0.02, 0); // Very subtle gravity
+    const damping = 0.95; // More damping for stability
 
     // Verlet integration
     segments.forEach(segment => {
@@ -208,7 +217,7 @@ const ThreeRope = ({ connections }: ThreeRopeProps) => {
     });
 
     // Constraint iterations for string stiffness
-    const iterations = 5;
+    const iterations = 8; // More iterations for tighter rope
     for (let iter = 0; iter < iterations; iter++) {
       for (let i = 0; i < segments.length - 1; i++) {
         const seg1 = segments[i];
@@ -216,8 +225,8 @@ const ThreeRope = ({ connections }: ThreeRopeProps) => {
         
         const delta = seg2.position.clone().sub(seg1.position);
         const distance = delta.length();
-        const restLength = 10; // Adjust for tightness
-        const diff = (distance - restLength) / distance;
+        const restLength = (segments as any).restLength || 10;
+        const diff = distance > 0.01 ? (distance - restLength) / distance : 0;
         
         if (!seg1.fixed && !seg2.fixed) {
           seg1.position.add(delta.multiplyScalar(diff * 0.5));
@@ -238,7 +247,7 @@ const ThreeRope = ({ connections }: ThreeRopeProps) => {
     const tubeGeometry = new THREE.TubeGeometry(
       curve,
       segments.length * 2,
-      0.8,
+      1.2,
       8,
       false
     );
