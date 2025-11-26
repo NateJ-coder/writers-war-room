@@ -29,9 +29,6 @@ const Layout = ({ children }: LayoutProps) => {
         <Link to="/writing" className={isActive('/writing') ? 'active' : ''}>
           ✏️ Writing
         </Link>
-        <Link to="/chatbot" className={isActive('/chatbot') ? 'active' : ''}>
-          🤖 AI Assistant
-        </Link>
       </nav>
 
       <main>{children}</main>
