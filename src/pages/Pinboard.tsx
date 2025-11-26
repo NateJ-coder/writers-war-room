@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import type { Note } from '../types';
 import { getChatResponse } from '../services/geminiService';
 import { Role } from '../types/chatbot';
-import ThreeRope from '../components/ThreeRope';
 
 const Pinboard = () => {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -265,29 +264,6 @@ const Pinboard = () => {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
-        {/* 3D Rope connections */}
-        <ThreeRope 
-          connections={notes.flatMap(note => 
-            (note.connections || []).map(connId => {
-              const targetNote = notes.find(n => n.id === connId);
-              if (targetNote && note.x !== undefined && note.y !== undefined && targetNote.x !== undefined && targetNote.y !== undefined) {
-                return {
-                  id: `${note.id}-${connId}`,
-                  x1: note.x + 110,
-                  y1: note.y + 16,
-                  x2: targetNote.x + 110,
-                  y2: targetNote.y + 16
-                };
-              }
-              return null;
-            }).filter((conn): conn is NonNullable<typeof conn> => conn !== null)
-          )}
-          onConnectionClick={(id) => {
-            const [fromId, toId] = id.split('-');
-            removeConnection(fromId, toId);
-          }}
-        />
-
         {notes.map((note: Note) => (
           <div
             key={note.id}
