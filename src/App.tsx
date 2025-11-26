@@ -8,6 +8,8 @@ import Writing from './pages/Writing';
 import Resources from './pages/Resources';
 import { ChatbotWidget } from './components/chatbot/ChatbotWidget';
 import { ChatbotToggle } from './components/chatbot/ChatbotToggle';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { WritingPreferencesProvider } from './contexts/WritingPreferencesContext';
 
 // Component to handle scroll position preservation
 function ScrollPreserver({ children }: { children: React.ReactNode }) {
@@ -36,29 +38,33 @@ function App() {
   const [isChatOpen, setIsChatOpen] = useState(false);
 
   return (
-    <Router>
-      <ScrollPreserver>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Pinboard />} />
-            <Route path="/contents" element={<Contents />} />
-            <Route path="/outline" element={<Outline />} />
-            <Route path="/writing" element={<Writing />} />
-            <Route path="/resources" element={<Resources />} />
-          </Routes>
-        </Layout>
-        
-        {/* Floating Chatbot Widget */}
-        <ChatbotToggle 
-          onClick={() => setIsChatOpen(!isChatOpen)} 
-          isOpen={isChatOpen}
-        />
-        <ChatbotWidget 
-          isOpen={isChatOpen} 
-          onClose={() => setIsChatOpen(false)}
-        />
-      </ScrollPreserver>
-    </Router>
+    <ThemeProvider>
+      <WritingPreferencesProvider>
+        <Router>
+          <ScrollPreserver>
+            <Layout>
+              <Routes>
+                <Route path="/" element={<Pinboard />} />
+                <Route path="/contents" element={<Contents />} />
+                <Route path="/outline" element={<Outline />} />
+                <Route path="/writing" element={<Writing />} />
+                <Route path="/resources" element={<Resources />} />
+              </Routes>
+            </Layout>
+            
+            {/* Floating Chatbot Widget */}
+            <ChatbotToggle 
+              onClick={() => setIsChatOpen(!isChatOpen)} 
+              isOpen={isChatOpen}
+            />
+            <ChatbotWidget 
+              isOpen={isChatOpen} 
+              onClose={() => setIsChatOpen(false)}
+            />
+          </ScrollPreserver>
+        </Router>
+      </WritingPreferencesProvider>
+    </ThemeProvider>
   );
 }
 

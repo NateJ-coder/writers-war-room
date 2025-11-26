@@ -30,6 +30,7 @@ const auth = getAuth(app);
 
 let currentUserId: string | null = null;
 let isAuthReady = false;
+let firebaseInitialized = false;
 
 /**
  * Defines the path for a public collection shared by all users of this app.
@@ -54,14 +55,22 @@ export const initFirebase = async (): Promise<void> => {
           currentUserId = 'ANON';
         }
         isAuthReady = true;
+        firebaseInitialized = true;
         resolve();
       });
     });
   } catch (error) {
     console.error("Firebase Initialization/Auth Error:", error);
+    isAuthReady = false;
+    firebaseInitialized = false;
     throw error;
   }
 };
+
+/**
+ * Check if Firebase is initialized
+ */
+export const isFirebaseReady = (): boolean => firebaseInitialized;
 
 /**
  * Get the current user ID

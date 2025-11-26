@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -6,14 +7,37 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
+  const { theme, toggleTheme } = useTheme();
 
   const isActive = (path: string) => location.pathname === path;
 
   return (
     <>
       <header>
-        <h1>✍️ Writer's War-Room</h1>
-        <p>Your Strategic Command Center for Crafting Epic Tales</p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <h1>✍️ Writer's War-Room</h1>
+            <p>Your Strategic Command Center for Crafting Epic Tales</p>
+          </div>
+          <button 
+            onClick={toggleTheme}
+            className="theme-toggle"
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            style={{
+              background: 'var(--surface-medium)',
+              border: '2px solid var(--neon-yellow)',
+              color: 'var(--neon-yellow)',
+              borderRadius: '50%',
+              width: '50px',
+              height: '50px',
+              fontSize: '24px',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
+        </div>
       </header>
 
       <nav>
