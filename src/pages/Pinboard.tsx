@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { Note } from '../types';
 import { getChatResponse } from '../services/geminiService';
 import { Role } from '../types/chatbot';
+import ThreeLineConnector from '../components/ThreeLineConnector';
 
 const Pinboard = () => {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -216,14 +217,6 @@ const Pinboard = () => {
     }
   };
 
-  const removeConnection = (fromId: string, toId: string) => {
-    setNotes(notes.map(note =>
-      note.id === fromId
-        ? { ...note, connections: note.connections?.filter(id => id !== toId) || [] }
-        : note
-    ));
-  };
-
   return (
     <div className="pinboard-container">
       <div className="pinboard-actions">
@@ -264,6 +257,23 @@ const Pinboard = () => {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
+        {/* Taut red string connections */}
+        <ThreeLineConnector 
+          connections={notes.flatMap(note => 
+            (note.connections || []).map(connId => {
+              const targetNote = notes.find(n => n.id === connId);
+              if (targetNote && note.x !== undefined && note.y !== undefined && targetNote.x !== undefined && targetNote.y !== undefined) {
+                return {
+                  id: `${note.id}-${connId}`,
+                  point1: [note.x + 110, note.y + 16, 0] as [number, number, number], // Thumbtack position
+                  point2: [targetNote.x + 110, targetNote.y + 16, 0] as [number, number, number] // Target thumbtack
+                };
+              }
+              return null;
+            }).filter((conn): conn is NonNullable<typeof conn> => conn !== null)
+          )}
+        />
+
         {notes.map((note: Note) => (
           <div
             key={note.id}
