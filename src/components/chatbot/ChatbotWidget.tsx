@@ -3,6 +3,8 @@ import { Message, Role } from '../../types/chatbot';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { getChatResponse } from '../../services/geminiService';
+import { getWebsiteContext, saveWebsiteContent } from '../../services/contentContext';
+import type { Note } from '../../types';
 
 interface ChatbotWidgetProps {
   isOpen: boolean;
@@ -13,7 +15,7 @@ export const ChatbotWidget = ({ isOpen, onClose }: ChatbotWidgetProps) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: Role.MODEL,
-      content: "Hi, Nate! What's on the agend today?",
+      content: "Hi! I'm your AI writing assistant with full access to your project. I can see your pinboard notes, characters, places, events, outline, and writing draft. I can also execute commands like adding sticky notes. What would you like to work on?",
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
@@ -27,6 +29,59 @@ export const ChatbotWidget = ({ isOpen, onClose }: ChatbotWidgetProps) => {
     scrollToBottom();
   }, [messages]);
 
+  const executeCommand = (command: any) => {
+    const context = getWebsiteContext();
+    
+    try {
+      switch (command.action) {
+        case 'add_note':
+          const newNote: Note = {
+            id: `note-${Date.now()}`,
+            text: command.text || 'New note',
+            timestamp: Date.now(),
+            rotation: Math.random() * 6 - 3,
+            x: 100 + Math.random() * 200,
+            y: 100 + Math.random() * 200,
+            type: 'text',
+            connections: []
+          };
+          context.pinboardNotes.push(newNote);
+          saveWebsiteContent({ pinboardNotes: context.pinboardNotes });
+          window.dispatchEvent(new Event('storage')); // Trigger refresh
+          break;
+          
+        case 'add_character':
+          context.characters.push({
+            name: command.name,
+            description: command.description
+          });
+          saveWebsiteContent({ characters: context.characters });
+          window.dispatchEvent(new Event('storage'));
+          break;
+          
+        case 'add_place':
+          context.places.push({
+            name: command.name,
+            description: command.description
+          });
+          saveWebsiteContent({ places: context.places });
+          window.dispatchEvent(new Event('storage'));
+          break;
+          
+        case 'add_event':
+          context.events.push({
+            name: command.name,
+            description: command.description
+          });
+          saveWebsiteContent({ events: context.events });
+          window.dispatchEvent(new Event('storage'));
+          break;
+      }
+    } catch (error) {
+      console.error('Error executing command:', error);
+    }
+  };
+
   const handleSendMessage = async (userInput: string) => {
     if (!userInput.trim()) return;
 
@@ -36,8 +91,15 @@ export const ChatbotWidget = ({ isOpen, onClose }: ChatbotWidgetProps) => {
     setIsLoading(true);
 
     try {
-      const { text, sources } = await getChatResponse(newMessages);
-      const modelMessage: Message = { role: Role.MODEL, content: text, sources };
+      // Include context with every request
+      const response = await getChatResponse(newMessages, true);
+      
+      // Execute any commands returned by AI
+      if (response.commands && response.commands.length > 0) {
+        response.commands.forEach(cmd => executeCommand(cmd));
+      }
+      
+      const modelMessage: Message = { role: Role.MODEL, content: response.text, sources: response.sources };
       setMessages((prevMessages) => [...prevMessages, modelMessage]);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';

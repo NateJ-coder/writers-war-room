@@ -1,24 +1,48 @@
+import { useState, useEffect } from 'react';
 import { Character, Place, Event } from '../types';
 
 const Contents = () => {
-  const characters: Character[] = [
+  const defaultCharacters: Character[] = [
     { name: "Lieutenant Colonel Ezekial Alaric", description: "The stoic, battle-hardened commander..." },
     { name: "Pippin", description: "A sentient, talking mouse..." },
     { name: "Private Keller", description: "A young, eager soldier..." },
     { name: "The Vampire", description: "A mysterious, ancient being..." }
   ];
 
-  const places: Place[] = [
+  const defaultPlaces: Place[] = [
     { name: "The War-Room", description: "The strategic heart of the military base..." },
     { name: "The Trenches", description: "Muddy, dangerous front lines..." },
     { name: "The Vampire's Lair", description: "An ancient, forgotten crypt..." }
   ];
 
-  const events: Event[] = [
+  const defaultEvents: Event[] = [
     { name: "The First Encounter", description: "When Pippin first meets Alaric..." },
     { name: "The Battle of Crimson Ridge", description: "A decisive confrontation..." },
     { name: "The Revelation", description: "The truth about the war is revealed..." }
   ];
+
+  const [characters, setCharacters] = useState<Character[]>([]);
+  const [places, setPlaces] = useState<Place[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
+
+  // Load data from localStorage
+  useEffect(() => {
+    const loadData = () => {
+      const savedChars = localStorage.getItem('characters-data');
+      const savedPlaces = localStorage.getItem('places-data');
+      const savedEvents = localStorage.getItem('events-data');
+      
+      setCharacters(savedChars ? JSON.parse(savedChars) : defaultCharacters);
+      setPlaces(savedPlaces ? JSON.parse(savedPlaces) : defaultPlaces);
+      setEvents(savedEvents ? JSON.parse(savedEvents) : defaultEvents);
+    };
+
+    loadData();
+
+    // Listen for storage changes
+    window.addEventListener('storage', loadData);
+    return () => window.removeEventListener('storage', loadData);
+  }, []);
 
   return (
     <div className="contents-container">

@@ -13,17 +13,25 @@ const Pinboard = () => {
   const pinboardRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load notes from localStorage on mount
+  // Load notes from localStorage on mount and listen for changes
   useEffect(() => {
-    const saved = localStorage.getItem('pinboard-notes');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setNotes(parsed);
-      } catch (e) {
-        console.error('Error loading notes:', e);
+    const loadNotes = () => {
+      const saved = localStorage.getItem('pinboard-notes');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          setNotes(parsed);
+        } catch (e) {
+          console.error('Error loading notes:', e);
+        }
       }
-    }
+    };
+
+    loadNotes();
+
+    // Listen for storage changes (from chatbot commands)
+    window.addEventListener('storage', loadNotes);
+    return () => window.removeEventListener('storage', loadNotes);
   }, []);
 
   // Save notes to localStorage whenever they change

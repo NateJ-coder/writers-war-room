@@ -1,7 +1,8 @@
+import { useState, useEffect } from 'react';
 import { OutlineSection } from '../types';
 
 const Outline = () => {
-  const outlineData: OutlineSection[] = [
+  const defaultOutlineData: OutlineSection[] = [
     {
       title: "Act I: The Gathering Storm",
       description: "Introduction to the war-torn world and the unlikely partnership between Alaric and Pippin.",
@@ -79,6 +80,22 @@ const Outline = () => {
       ]
     }
   ];
+
+  const [outlineData, setOutlineData] = useState<OutlineSection[]>([]);
+
+  // Load data from localStorage
+  useEffect(() => {
+    const loadData = () => {
+      const saved = localStorage.getItem('outline-data');
+      setOutlineData(saved ? JSON.parse(saved) : defaultOutlineData);
+    };
+
+    loadData();
+
+    // Listen for storage changes
+    window.addEventListener('storage', loadData);
+    return () => window.removeEventListener('storage', loadData);
+  }, []);
 
   return (
     <div className="outline-container">
