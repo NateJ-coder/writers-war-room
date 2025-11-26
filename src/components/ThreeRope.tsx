@@ -1,12 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
-interface RopeSegment {
-  position: THREE.Vector3;
-  oldPosition: THREE.Vector3;
-  fixed: boolean;
-}
-
 interface ThreeRopeProps {
   connections: Array<{
     id: string;
@@ -23,7 +17,7 @@ const ThreeRope = ({ connections }: ThreeRopeProps) => {
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.OrthographicCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const ropesRef = useRef<Map<string, { segments: RopeSegment[]; mesh: THREE.Mesh }>>(new Map());
+  const ropesRef = useRef<Map<string, THREE.Group>>(new Map());
   const animationFrameRef = useRef<number>(0);
 
   useEffect(() => {
@@ -56,13 +50,13 @@ const ThreeRope = ({ connections }: ThreeRopeProps) => {
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Add ambient light
+    // Add ambient light for overall illumination
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
 
-    // Add directional light for shadows
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(5, 10, 7);
+    // Add directional light for depth
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    directionalLight.position.set(50, 50, 100);
     scene.add(directionalLight);
 
     // Handle window resize
@@ -71,8 +65,8 @@ const ThreeRope = ({ connections }: ThreeRopeProps) => {
       const newHeight = container.clientHeight;
       camera.left = 0;
       camera.right = newWidth;
-      camera.top = 0;
-      camera.bottom = newHeight;
+      camera.top = newHeight;
+      camera.bottom = 0;
       camera.updateProjectionMatrix();
       renderer.setSize(newWidth, newHeight);
     };
@@ -99,7 +93,7 @@ const ThreeRope = ({ connections }: ThreeRopeProps) => {
     const currentIds = new Set(connections.map(c => c.id));
     ropes.forEach((rope, id) => {
       if (!currentIds.has(id)) {
-        scene.remove(rope.mesh);
+        scene.remove(rope);
         ropes.delete(id);
       }
     });
@@ -109,35 +103,26 @@ const ThreeRope = ({ connections }: ThreeRopeProps) => {
       const existingRope = ropes.get(conn.id);
       
       if (!existingRope) {
-        // Create new rope with physics segments
-        const segments = createRopeSegments(conn.x1, conn.y1, conn.x2, conn.y2);
-        const mesh = createRopeMesh(segments);
-        scene.add(mesh);
-        ropes.set(conn.id, { segments, mesh });
-      } else {
-        // Update fixed points to follow thumbtacks precisely
-        existingRope.segments[0].position.set(conn.x1, conn.y1, 0);
-        existingRope.segments[0].oldPosition.set(conn.x1, conn.y1, 0);
-        
-        const lastIdx = existingRope.segments.length - 1;
-        existingRope.segments[lastIdx].position.set(conn.x2, conn.y2, 0);
-        existingRope.segments[lastIdx].oldPosition.set(conn.x2, conn.y2, 0);
-        
-        // Recalculate rest length when endpoints move
-        const newDistance = Math.sqrt(Math.pow(conn.x2 - conn.x1, 2) + Math.pow(conn.y2 - conn.y1, 2));
-        (existingRope.segments as any).restLength = newDistance / (existingRope.segments.length - 1);
+        // Create new taut line with shadow
+        const lineGroup = createLineWithShadow();
+        scene.add(lineGroup);
+        ropes.set(conn.id, lineGroup);
+      }
+      
+      // Update line positions
+      const lineGroup = ropes.get(conn.id);
+      if (lineGroup) {
+        updateLinePositions(
+          lineGroup, 
+          new THREE.Vector3(conn.x1, conn.y1, 0),
+          new THREE.Vector3(conn.x2, conn.y2, 0)
+        );
       }
     });
 
     // Start animation loop
     const animate = () => {
       animationFrameRef.current = requestAnimationFrame(animate);
-
-      // Physics simulation for all ropes
-      ropes.forEach(rope => {
-        simulateRope(rope.segments);
-        updateRopeMesh(rope.mesh, rope.segments);
-      });
 
       if (rendererRef.current && cameraRef.current) {
         rendererRef.current.render(scene, cameraRef.current);
@@ -153,111 +138,62 @@ const ThreeRope = ({ connections }: ThreeRopeProps) => {
     };
   }, [connections]);
 
-  const createRopeSegments = (x1: number, y1: number, x2: number, y2: number): RopeSegment[] => {
-    const numSegments = 10; // Fewer segments for better stability
-    const segments: RopeSegment[] = [];
-    const totalDistance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-    const segmentLength = totalDistance / numSegments;
+  const createLineWithShadow = (): THREE.Group => {
+    // Create a container group for the line and its shadow
+    const group = new THREE.Group();
 
-    for (let i = 0; i <= numSegments; i++) {
-      const t = i / numSegments;
-      const x = x1 + (x2 - x1) * t;
-      const y = y1 + (y2 - y1) * t;
-      
-      // Initialize perfectly straight for maximum tautness (no sag)
-      const sagAmount = 0; // Zero sag for perfectly taut rope
-      
-      segments.push({
-        position: new THREE.Vector3(x, y + sagAmount, 0),
-        oldPosition: new THREE.Vector3(x, y + sagAmount, 0),
-        fixed: i === 0 || i === numSegments
-      });
-    }
+    // --- 1. Shadow Line (for depth) ---
+    const shadowGeometry = new THREE.BufferGeometry();
+    shadowGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3)); 
     
-    // Store segment length for constraints
-    (segments as any).restLength = segmentLength;
-
-    return segments;
-  };
-
-  const createRopeMesh = (segments: RopeSegment[]): THREE.Mesh => {
-    // Create curve from segments
-    const points = segments.map(s => s.position);
-    const curve = new THREE.CatmullRomCurve3(points);
-    
-    // Create tube geometry for realistic rope
-    const tubeGeometry = new THREE.TubeGeometry(
-      curve,
-      segments.length * 2, // segments
-      1.2, // radius (thin string)
-      8, // radial segments
-      false // closed
-    );
-
-    // Rope material with texture
-    const material = new THREE.MeshStandardMaterial({
-      color: 0xcc0000,
-      roughness: 0.8,
-      metalness: 0.1,
-      side: THREE.DoubleSide
+    const shadowMaterial = new THREE.LineBasicMaterial({
+      color: 0x000000, // Black shadow
+      linewidth: 4,
+      transparent: true,
+      opacity: 0.3, // Subtle shadow effect
     });
-
-    const mesh = new THREE.Mesh(tubeGeometry, material);
-    return mesh;
-  };
-
-  const simulateRope = (segments: RopeSegment[]) => {
-    const gravity = new THREE.Vector3(0, 0.001, 0); // Minimal gravity for taut rope
-    const damping = 0.98; // High damping to eliminate bounce
-
-    // Verlet integration
-    segments.forEach(segment => {
-      if (!segment.fixed) {
-        const velocity = segment.position.clone().sub(segment.oldPosition);
-        segment.oldPosition.copy(segment.position);
-        segment.position.add(velocity.multiplyScalar(damping)).add(gravity);
-      }
-    });
-
-    // Constraint iterations for string stiffness
-    const iterations = 30; // High iteration count for very stiff rope
-    for (let iter = 0; iter < iterations; iter++) {
-      for (let i = 0; i < segments.length - 1; i++) {
-        const seg1 = segments[i];
-        const seg2 = segments[i + 1];
-        
-        const delta = seg2.position.clone().sub(seg1.position);
-        const distance = delta.length();
-        // Use precisely calculated rest length for perfect tautness
-        const restLength = (segments as any).restLength || distance;
-        const diff = distance > 0.01 ? (distance - restLength) / distance : 0;
-        
-        if (!seg1.fixed && !seg2.fixed) {
-          seg1.position.add(delta.multiplyScalar(diff * 0.5));
-          seg2.position.sub(delta.multiplyScalar(diff * 0.5));
-        } else if (!seg1.fixed) {
-          seg1.position.add(delta.multiplyScalar(diff));
-        } else if (!seg2.fixed) {
-          seg2.position.sub(delta.multiplyScalar(diff));
-        }
-      }
-    }
-  };
-
-  const updateRopeMesh = (mesh: THREE.Mesh, segments: RopeSegment[]) => {
-    const points = segments.map(s => s.position);
-    const curve = new THREE.CatmullRomCurve3(points);
     
-    const tubeGeometry = new THREE.TubeGeometry(
-      curve,
-      segments.length * 2,
-      1.2,
-      8,
-      false
-    );
+    const shadowLine = new THREE.Line(shadowGeometry, shadowMaterial);
+    // Offset shadow slightly down and right for depth
+    shadowLine.position.set(2, 2, -0.5);
+    group.add(shadowLine);
 
-    mesh.geometry.dispose();
-    mesh.geometry = tubeGeometry;
+    // --- 2. Main Red Line ---
+    const mainGeometry = new THREE.BufferGeometry();
+    mainGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3)); 
+
+    const mainMaterial = new THREE.LineBasicMaterial({
+      color: 0xcc0000, // Deep red for classic detective board
+      linewidth: 2.5, 
+    });
+    
+    const mainLine = new THREE.Line(mainGeometry, mainMaterial);
+    mainLine.position.set(0, 0, 0);
+    group.add(mainLine);
+    
+    return group;
+  };
+
+  const updateLinePositions = (group: THREE.Group, point1: THREE.Vector3, point2: THREE.Vector3) => {
+    // Update both shadow and main line
+    const shadowLine = group.children[0] as THREE.Line;
+    const mainLine = group.children[1] as THREE.Line;
+    
+    const updatePositions = (line: THREE.Line) => {
+      const positions = line.geometry.attributes.position.array as Float32Array;
+      positions[0] = point1.x; // x1
+      positions[1] = point1.y; // y1
+      positions[2] = point1.z; // z1
+
+      positions[3] = point2.x; // x2
+      positions[4] = point2.y; // y2
+      positions[5] = point2.z; // z2
+      
+      line.geometry.attributes.position.needsUpdate = true;
+    };
+
+    updatePositions(shadowLine);
+    updatePositions(mainLine);
   };
 
   return (
