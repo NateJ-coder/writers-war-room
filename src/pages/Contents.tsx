@@ -22,40 +22,37 @@ const Contents = () => {
 
   return (
     <div className="contents-container">
-      <section className="contents-section">
+      <section className="content-section">
         <h2>🎭 Characters</h2>
-        <div className="contents-grid">
+        <ul>
           {characters.map((char, idx) => (
-            <div key={idx} className="contents-card">
-              <h3>{char.name}</h3>
-              <p>{char.description}</p>
-            </div>
+            <li key={idx}>
+              <strong>{char.name}</strong> - {char.description}
+            </li>
           ))}
-        </div>
+        </ul>
       </section>
 
-      <section className="contents-section">
+      <section className="content-section">
         <h2>🏰 Places</h2>
-        <div className="contents-grid">
+        <ul>
           {places.map((place, idx) => (
-            <div key={idx} className="contents-card">
-              <h3>{place.name}</h3>
-              <p>{place.description}</p>
-            </div>
+            <li key={idx}>
+              <strong>{place.name}</strong> - {place.description}
+            </li>
           ))}
-        </div>
+        </ul>
       </section>
 
-      <section className="contents-section">
+      <section className="content-section">
         <h2>⚡ Events</h2>
-        <div className="contents-grid">
+        <ul>
           {events.map((event, idx) => (
-            <div key={idx} className="contents-card">
-              <h3>{event.name}</h3>
-              <p>{event.description}</p>
-            </div>
+            <li key={idx}>
+              <strong>{event.name}</strong> - {event.description}
+            </li>
           ))}
-        </div>
+        </ul>
       </section>
     </div>
   );

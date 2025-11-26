@@ -85,27 +85,26 @@ const Writing = () => {
 
   return (
     <div className="writing-container">
-      <div className="writing-header">
-        <h2>✏️ Writing Space</h2>
-        <div className="writing-info">
-          {lastSaved && (
-            <span className="last-saved">
-              Last saved: {lastSaved.toLocaleTimeString()}
-            </span>
-          )}
-          <button onClick={saveDraft} className="save-btn">💾 Save Now</button>
-          <button 
-            onClick={handleReview} 
-            disabled={isReviewing || !draft}
-            className="review-btn"
-          >
-            {isReviewing ? '🤔 Reviewing...' : '🤖 AI Review'}
-          </button>
-        </div>
+      <h2>✏️ Writing Space</h2>
+      
+      <div className="writing-controls">
+        <button onClick={saveDraft} className="save-btn">💾 Save Now</button>
+        <button 
+          onClick={handleReview} 
+          disabled={isReviewing || !draft}
+          className="review-btn"
+        >
+          {isReviewing ? '🤔 Reviewing...' : '🤖 AI Review'}
+        </button>
+        {lastSaved && (
+          <span className="last-saved" style={{ color: 'var(--brass)', marginLeft: 'auto', alignSelf: 'center' }}>
+            Last saved: {lastSaved.toLocaleTimeString()}
+          </span>
+        )}
       </div>
 
       <textarea
-        id="writing-textarea"
+        className="writing-area"
         placeholder="Begin your epic tale here..."
         value={draft}
         onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDraft(e.target.value)}
@@ -113,8 +112,8 @@ const Writing = () => {
 
       {reviewFeedback && (
         <div className="review-feedback">
-          <h3>AI Feedback</h3>
-          <pre>{reviewFeedback}</pre>
+          <h3 style={{ color: 'var(--neon-green)', fontFamily: 'Bebas Neue, sans-serif', marginTop: 0 }}>AI Feedback</h3>
+          <pre style={{ fontFamily: 'Courier Prime, monospace', whiteSpace: 'pre-wrap' }}>{reviewFeedback}</pre>
         </div>
       )}
     </div>

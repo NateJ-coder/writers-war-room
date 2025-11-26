@@ -85,7 +85,7 @@ const Outline = () => {
       <h2>📖 Book Outline: "The War-Room Chronicles"</h2>
       <div className="outline-grid">
         {outlineData.map((section, idx) => (
-          <div key={idx} className="outline-section">
+          <div key={idx} className="outline-card">
             <h3>{section.title}</h3>
             <p className="section-description">{section.description}</p>
             <div className="chapters-list">
