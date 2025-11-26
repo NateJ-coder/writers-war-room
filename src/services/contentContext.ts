@@ -3,6 +3,7 @@ import type { Note, Character, Place, Event, OutlineSection } from '../types';
 export interface WebsiteContext {
   pinboardNotes: Note[];
   writingDraft: string;
+  refinedBookDraft: string;
   outline: OutlineSection[];
   characters: Character[];
   places: Place[];
@@ -16,6 +17,9 @@ export const getWebsiteContext = (): WebsiteContext => {
   // Get writing draft
   const writingDraft = localStorage.getItem('writing-draft') || '';
   
+  // Get refined book draft
+  const refinedBookDraft = localStorage.getItem('refined-book-draft') || '';
+  
   // Get outline (stored in localStorage if user has modified it)
   const outline: OutlineSection[] = JSON.parse(localStorage.getItem('outline-data') || '[]');
   
@@ -27,6 +31,7 @@ export const getWebsiteContext = (): WebsiteContext => {
   return {
     pinboardNotes,
     writingDraft,
+    refinedBookDraft,
     outline,
     characters,
     places,
@@ -89,12 +94,20 @@ export const formatContextForAI = (context: WebsiteContext): string => {
     formatted += "\n";
   }
   
-  // Writing Draft
+  // Writing Draft (raw)
   if (context.writingDraft) {
-    const preview = context.writingDraft.substring(0, 500);
-    formatted += "## WRITING DRAFT (preview):\n";
-    formatted += preview + (context.writingDraft.length > 500 ? "...\n" : "\n");
+    const preview = context.writingDraft.substring(0, 300);
+    formatted += "## CURRENT WRITING DRAFT (raw preview):\n";
+    formatted += preview + (context.writingDraft.length > 300 ? "...\n" : "\n");
     formatted += `(Total words: ${context.writingDraft.split(/\s+/).filter(w => w.length > 0).length})\n\n`;
+  }
+  
+  // Refined Book Draft (full organized version)
+  if (context.refinedBookDraft) {
+    formatted += "## REFINED BOOK DRAFT (full organized manuscript):\n";
+    formatted += context.refinedBookDraft + "\n\n";
+    const wordCount = context.refinedBookDraft.split(/\s+/).filter(w => w.length > 0).length;
+    formatted += `(Total refined words: ${wordCount})\n\n`;
   }
   
   formatted += "=== END CONTEXT ===\n";
@@ -114,6 +127,9 @@ export const saveWebsiteContent = (context: Partial<WebsiteContext>): void => {
   if (context.writingDraft !== undefined) {
     localStorage.setItem('writing-draft', context.writingDraft);
   }
+  if (context.refinedBookDraft !== undefined) {
+    localStorage.setItem('refined-book-draft', context.refinedBookDraft);
+  }
   if (context.outline !== undefined) {
     localStorage.setItem('outline-data', JSON.stringify(context.outline));
   }
@@ -126,4 +142,17 @@ export const saveWebsiteContent = (context: Partial<WebsiteContext>): void => {
   if (context.events !== undefined) {
     localStorage.setItem('events-data', JSON.stringify(context.events));
   }
+};
+
+// Download refined book draft as a .txt file
+export const downloadBookDraft = (content: string, filename: string = 'book-draft.txt'): void => {
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 };

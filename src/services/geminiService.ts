@@ -125,3 +125,81 @@ const extractCommands = (text: string): any[] => {
   
   return commands;
 };
+
+// Refine writing draft for organized book format
+export const refineBookDraft = async (rawDraft: string): Promise<string> => {
+  if (!ai) {
+    throw new Error("Gemini API key not configured.");
+  }
+
+  const prompt = `You are a professional book editor. Take this raw manuscript draft and refine it for better organization and layout while preserving the author's voice and story. 
+
+Format it as a proper book manuscript with:
+- Clear chapter breaks
+- Proper paragraph spacing
+- Section divisions where appropriate
+- Maintained narrative flow
+- Minor grammar/punctuation fixes only
+
+Keep ALL the content, just organize and format it better. Do not add or remove story content.
+
+Here is the draft:
+
+${rawDraft}`;
+
+  try {
+    const response: GenerateContentResponse = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{
+        role: 'user',
+        parts: [{ text: prompt }],
+      }],
+    });
+
+    return response.text ?? rawDraft;
+  } catch (error) {
+    console.error("Error refining draft:", error);
+    return rawDraft; // Return original if refinement fails
+  }
+};
+
+// Analyze draft and extract story elements
+export const analyzeDraftForElements = async (draft: string): Promise<{
+  characters: any[];
+  places: any[];
+  events: any[];
+}> => {
+  if (!ai) {
+    throw new Error("Gemini API key not configured.");
+  }
+
+  const prompt = `Analyze this manuscript and extract story elements. Return ONLY valid JSON in this exact format:
+{
+  "characters": [{"name": "Character Name", "description": "brief description"}],
+  "places": [{"name": "Place Name", "description": "brief description"}],
+  "events": [{"name": "Event Name", "description": "brief description"}]
+}
+
+Manuscript:
+${draft.substring(0, 3000)}...`;
+
+  try {
+    const response: GenerateContentResponse = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{
+        role: 'user',
+        parts: [{ text: prompt }],
+      }],
+    });
+
+    const text = response.text ?? '{}';
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+    return { characters: [], places: [], events: [] };
+  } catch (error) {
+    console.error("Error analyzing draft:", error);
+    return { characters: [], places: [], events: [] };
+  }
+};

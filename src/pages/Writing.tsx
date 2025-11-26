@@ -1,9 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
+import { refineBookDraft, analyzeDraftForElements } from '../services/geminiService';
+import { saveWebsiteContent, downloadBookDraft, getWebsiteContext } from '../services/contentContext';
+import { getDb, collection, doc, setDoc, serverTimestamp } from '../services/firebase';
 
 const Writing = () => {
   const [draft, setDraft] = useState('');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isReviewing, setIsReviewing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveNotification, setSaveNotification] = useState('');
   const [reviewFeedback, setReviewFeedback] = useState('');
   const autoSaveTimerRef = useRef<number | null>(null);
 
@@ -41,11 +46,92 @@ const Writing = () => {
     };
   }, [draft]);
 
-  const saveDraft = () => {
-    localStorage.setItem('writing-draft', draft);
-    const now = new Date();
-    localStorage.setItem('writing-last-saved', now.toISOString());
-    setLastSaved(now);
+  const saveDraft = async () => {
+    if (!draft.trim()) return;
+    
+    setIsSaving(true);
+    setSaveNotification('Saving...');
+
+    try {
+      // 1. Save raw draft to localStorage
+      localStorage.setItem('writing-draft', draft);
+      const now = new Date();
+      localStorage.setItem('writing-last-saved', now.toISOString());
+      setLastSaved(now);
+
+      // 2. Refine draft with AI
+      setSaveNotification('Refining with AI...');
+      const refinedDraft = await refineBookDraft(draft);
+      
+      // Save refined draft to localStorage
+      saveWebsiteContent({ refinedBookDraft: refinedDraft });
+      
+      // 3. Download as book-draft.txt
+      downloadBookDraft(refinedDraft);
+
+      // 4. Save to Firebase
+      try {
+        const db = getDb();
+        const userId = 'default-user'; // Replace with actual user ID when auth is implemented
+        const draftRef = doc(collection(db, 'users', userId, 'drafts'), 'current');
+        await setDoc(draftRef, {
+          content: draft,
+          refinedContent: refinedDraft,
+          lastModified: serverTimestamp(),
+          wordCount: draft.split(/\s+/).filter(w => w.length > 0).length
+        });
+      } catch (firebaseError) {
+        console.error('Firebase save error:', firebaseError);
+        // Continue even if Firebase fails
+      }
+
+      // 5. Analyze draft and extract elements
+      setSaveNotification('Analyzing content...');
+      const elements = await analyzeDraftForElements(draft);
+      
+      // Merge with existing content (don't replace, add new ones)
+      const context = getWebsiteContext();
+      
+      // Add new characters that don't exist
+      const newCharacters = elements.characters.filter(newChar => 
+        !context.characters.some(existing => 
+          existing.name.toLowerCase() === newChar.name.toLowerCase()
+        )
+      );
+      
+      // Add new places
+      const newPlaces = elements.places.filter(newPlace => 
+        !context.places.some(existing => 
+          existing.name.toLowerCase() === newPlace.name.toLowerCase()
+        )
+      );
+      
+      // Add new events
+      const newEvents = elements.events.filter(newEvent => 
+        !context.events.some(existing => 
+          existing.name.toLowerCase() === newEvent.name.toLowerCase()
+        )
+      );
+
+      if (newCharacters.length > 0 || newPlaces.length > 0 || newEvents.length > 0) {
+        saveWebsiteContent({
+          characters: [...context.characters, ...newCharacters],
+          places: [...context.places, ...newPlaces],
+          events: [...context.events, ...newEvents]
+        });
+        window.dispatchEvent(new Event('storage'));
+      }
+
+      setSaveNotification('✅ Saved successfully!');
+      setTimeout(() => setSaveNotification(''), 3000);
+
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      setSaveNotification('❌ Error saving. Please try again.');
+      setTimeout(() => setSaveNotification(''), 3000);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleReview = () => {
@@ -88,19 +174,35 @@ const Writing = () => {
       <h2>✏️ Writing Space</h2>
       
       <div className="writing-controls">
-        <button onClick={saveDraft} className="save-btn">💾 Save Now</button>
+        <button onClick={saveDraft} className="save-btn" disabled={isSaving || !draft}>
+          {isSaving ? '💫 Saving...' : '💾 Save Now'}
+        </button>
         <button 
           onClick={handleReview} 
-          disabled={isReviewing || !draft}
+          disabled={isReviewing || !draft || isSaving}
           className="review-btn"
         >
           {isReviewing ? '🤔 Reviewing...' : '🤖 AI Review'}
         </button>
-        {lastSaved && (
-          <span className="last-saved" style={{ color: 'var(--brass)', marginLeft: 'auto', alignSelf: 'center' }}>
-            Last saved: {lastSaved.toLocaleTimeString()}
-          </span>
-        )}
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '15px' }}>
+          {saveNotification && (
+            <span className="save-notification" style={{ 
+              color: saveNotification.includes('✅') ? 'var(--neon-green)' : 
+                     saveNotification.includes('❌') ? 'var(--neon-pink)' : 
+                     'var(--neon-yellow)',
+              fontFamily: 'Bebas Neue, sans-serif',
+              letterSpacing: '1px',
+              textShadow: '0 0 10px currentColor'
+            }}>
+              {saveNotification}
+            </span>
+          )}
+          {lastSaved && !saveNotification && (
+            <span className="last-saved" style={{ color: 'var(--brass)' }}>
+              Last saved: {lastSaved.toLocaleTimeString()}
+            </span>
+          )}
+        </div>
       </div>
 
       <textarea
