@@ -13,7 +13,7 @@ export const ChatbotWidget = ({ isOpen, onClose }: ChatbotWidgetProps) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: Role.MODEL,
-      content: "Hi! I'm your AI writing assistant. I can help with character development, plot ideas, world-building, and writing tips. What would you like to discuss?",
+      content: "Hi, Nate! What's on the agend today?",
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
