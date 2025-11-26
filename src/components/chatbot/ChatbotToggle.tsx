@@ -1,5 +1,3 @@
-import { useState } from 'react';
-
 interface ChatbotToggleProps {
   onClick: () => void;
   isOpen: boolean;
