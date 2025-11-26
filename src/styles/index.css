@@ -114,16 +114,16 @@ header h1 {
     font-weight: 900;
     letter-spacing: 8px;
     text-transform: uppercase;
-    background: linear-gradient(135deg, var(--neon-pink), var(--neon-yellow), var(--neon-blue));
+    background: linear-gradient(135deg, var(--neon-blue), var(--neon-yellow), var(--neon-blue));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     text-shadow: 
-        0 0 10px rgba(255, 0, 110, 0.8),
-        0 0 20px rgba(255, 0, 110, 0.6),
-        0 0 30px rgba(255, 0, 110, 0.4),
+        0 0 10px rgba(0, 217, 255, 0.8),
+        0 0 20px rgba(0, 217, 255, 0.6),
+        0 0 30px rgba(0, 217, 255, 0.4),
         0 0 40px rgba(255, 234, 0, 0.3);
-    filter: drop-shadow(0 0 15px rgba(255, 0, 110, 0.5));
+    filter: drop-shadow(0 0 15px rgba(0, 217, 255, 0.5));
     animation: neonFlicker 4s ease-in-out infinite alternate;
 }
 
@@ -233,15 +233,15 @@ nav a.active {
 @keyframes activeTabGlow {
     0% {
         box-shadow: 
-            0 0 20px rgba(255, 0, 110, 0.8),
-            0 0 30px rgba(255, 0, 110, 0.6),
-            0 0 40px rgba(255, 0, 110, 0.4);
+            0 0 20px rgba(0, 217, 255, 0.8),
+            0 0 30px rgba(0, 217, 255, 0.6),
+            0 0 40px rgba(0, 217, 255, 0.4);
     }
     100% {
         box-shadow: 
-            0 0 30px rgba(255, 0, 110, 1),
-            0 0 40px rgba(255, 0, 110, 0.8),
-            0 0 50px rgba(255, 0, 110, 0.6);
+            0 0 30px rgba(0, 217, 255, 1),
+            0 0 40px rgba(0, 217, 255, 0.8),
+            0 0 50px rgba(0, 217, 255, 0.6);
     }
 }
 
@@ -1538,11 +1538,25 @@ button.bg-amber-600:disabled {
     overflow: hidden;
 }
 
-.view-full-btn {
-    width: 100%;
+.processed-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    background: var(--neon-green);
+    color: var(--dark-brown);
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.resource-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.view-full-btn, .review-update-btn {
+    flex: 1;
     padding: 10px;
     background: var(--surface-medium);
-    color: var(--neon-yellow);
     border: 1px solid var(--neon-yellow);
     border-radius: 4px;
     font-family: 'Courier Prime', monospace;
@@ -1550,9 +1564,28 @@ button.bg-amber-600:disabled {
     transition: all 0.2s ease;
 }
 
+.view-full-btn {
+    color: var(--neon-yellow);
+}
+
 .view-full-btn:hover {
     background: var(--neon-yellow);
     color: var(--dark-brown);
+}
+
+.review-update-btn {
+    color: var(--neon-blue);
+    border-color: var(--neon-blue);
+}
+
+.review-update-btn:hover {
+    background: var(--neon-blue);
+    color: var(--dark-brown);
+}
+
+.review-update-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .resource-modal {
