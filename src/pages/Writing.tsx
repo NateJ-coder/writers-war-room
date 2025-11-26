@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { refineBookDraft, analyzeDraftForElements } from '../services/geminiService';
+import { useState, useEffect, useRef } from 'react';
+import { refineBookDraft, analyzeDraftForElements, searchBookDraft } from '../services/geminiService';
 import { saveWebsiteContent, updateBookDraftFile, selectExistingBookDraft, isFileLinked, getWebsiteContext } from '../services/contentContext';
 import { getDb, collection, doc, setDoc, serverTimestamp } from '../services/firebase';
 
@@ -12,6 +12,8 @@ const Writing = () => {
   const [saveNotification, setSaveNotification] = useState('');
   const [reviewFeedback, setReviewFeedback] = useState('');
   const [fileLinked, setFileLinked] = useState(false);
+  const [highlightedText, setHighlightedText] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Load draft from localStorage on mount
   useEffect(() => {
@@ -29,6 +31,24 @@ const Writing = () => {
       setSessionActive(true);
       setDraft(sessionContent);
     }
+
+    // Listen for AI commands from chatbot
+    const handleAICommand = async (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const command = customEvent.detail;
+      
+      if (command.action === 'search_book') {
+        await handleSearchBook(command.query, command.excerpt);
+      } else if (command.action === 'highlight_text') {
+        handleHighlightText(command.text, command.context);
+      }
+    };
+
+    window.addEventListener('ai-writing-command', handleAICommand);
+    
+    return () => {
+      window.removeEventListener('ai-writing-command', handleAICommand);
+    };
   }, []);
 
   // Auto-save session content to sessionStorage (not to cloud/file)
@@ -57,9 +77,68 @@ const Writing = () => {
     }
   };
 
+  const handleSearchBook = async (query: string, excerpt?: string) => {
+    setSaveNotification('🔍 Searching book...');
+    
+    try {
+      // Get the full book content
+      const bookContent = localStorage.getItem('refined-book-draft') || '';
+      
+      if (!bookContent) {
+        setSaveNotification('⚠️ No book content found to search');
+        setTimeout(() => setSaveNotification(''), 3000);
+        return;
+      }
+
+      // If excerpt provided by AI, use it directly
+      if (excerpt) {
+        // Load the excerpt into the draft area for editing
+        setDraft(excerpt);
+        setHighlightedText(excerpt);
+        setSaveNotification('✅ Found and loaded excerpt');
+        setTimeout(() => {
+          setSaveNotification('');
+          setHighlightedText(null);
+        }, 5000);
+        return;
+      }
+
+      // Otherwise search using AI
+      const result = await searchBookDraft(query, bookContent);
+      
+      if (result.found && result.excerpt) {
+        setDraft(result.excerpt);
+        setHighlightedText(result.excerpt);
+        setSaveNotification('✅ Found matching content');
+        setTimeout(() => {
+          setSaveNotification('');
+          setHighlightedText(null);
+        }, 5000);
+      } else {
+        setSaveNotification('❌ No matching content found');
+        setTimeout(() => setSaveNotification(''), 3000);
+      }
+    } catch (error) {
+      console.error('Error searching book:', error);
+      setSaveNotification('❌ Search failed');
+      setTimeout(() => setSaveNotification(''), 3000);
+    }
+  };
+
+  const handleHighlightText = (text: string, context?: string) => {
+    setHighlightedText(text);
+    setDraft(text);
+    setSaveNotification(context ? `💡 ${context}` : '✨ Content highlighted');
+    setTimeout(() => {
+      setSaveNotification('');
+      setHighlightedText(null);
+    }, 5000);
+  };
+
   const beginSession = () => {
     setSessionActive(true);
     setDraft('');
+    setHighlightedText(null);
     sessionStorage.setItem('writing-session-active', 'true');
     sessionStorage.setItem('writing-session-content', '');
     setSaveNotification('📝 Session started - write freely!');
@@ -312,12 +391,36 @@ const Writing = () => {
       </div>
 
       {sessionActive ? (
-        <textarea
-          className="writing-area"
-          placeholder="Begin your epic tale here... (Session active - changes are temporary until you end the session)"
-          value={draft}
-          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDraft(e.target.value)}
-        />
+        <div style={{ position: 'relative' }}>
+          <textarea
+            ref={textareaRef}
+            className="writing-area"
+            placeholder="Begin your epic tale here... (Session active - changes are temporary until you end the session)"
+            value={draft}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDraft(e.target.value)}
+            style={{
+              backgroundColor: highlightedText ? 'rgba(0, 217, 255, 0.1)' : undefined,
+              transition: 'background-color 0.3s ease'
+            }}
+          />
+          {highlightedText && (
+            <div style={{
+              position: 'absolute',
+              top: '10px',
+              right: '10px',
+              background: 'var(--neon-blue)',
+              color: 'var(--dark-brown)',
+              padding: '8px 16px',
+              borderRadius: '4px',
+              fontWeight: 'bold',
+              fontSize: '0.9em',
+              pointerEvents: 'none',
+              animation: 'pulse 2s ease-in-out infinite'
+            }}>
+              ✨ AI Retrieved Content
+            </div>
+          )}
+        </div>
       ) : (
         <div className="session-placeholder" style={{
           display: 'flex',

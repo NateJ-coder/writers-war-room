@@ -76,6 +76,14 @@ export const ChatbotWidget = ({ isOpen, onClose }: ChatbotWidgetProps) => {
           saveWebsiteContent({ events: context.events });
           window.dispatchEvent(new Event('storage'));
           break;
+          
+        case 'search_book':
+        case 'highlight_text':
+          // Dispatch custom event to be handled by Writing page
+          window.dispatchEvent(new CustomEvent('ai-writing-command', { 
+            detail: command 
+          }));
+          break;
       }
     } catch (error) {
       console.error('Error executing command:', error);
