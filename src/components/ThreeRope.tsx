@@ -115,13 +115,17 @@ const ThreeRope = ({ connections }: ThreeRopeProps) => {
         scene.add(mesh);
         ropes.set(conn.id, { segments, mesh });
       } else {
-        // Update fixed points
+        // Update fixed points to follow thumbtacks precisely
         existingRope.segments[0].position.set(conn.x1, conn.y1, 0);
-        existingRope.segments[0].oldPosition.copy(existingRope.segments[0].position);
+        existingRope.segments[0].oldPosition.set(conn.x1, conn.y1, 0);
         
         const lastIdx = existingRope.segments.length - 1;
         existingRope.segments[lastIdx].position.set(conn.x2, conn.y2, 0);
-        existingRope.segments[lastIdx].oldPosition.copy(existingRope.segments[lastIdx].position);
+        existingRope.segments[lastIdx].oldPosition.set(conn.x2, conn.y2, 0);
+        
+        // Recalculate rest length when endpoints move
+        const newDistance = Math.sqrt(Math.pow(conn.x2 - conn.x1, 2) + Math.pow(conn.y2 - conn.y1, 2));
+        (existingRope.segments as any).restLength = newDistance / (existingRope.segments.length - 1);
       }
     });
 
@@ -160,8 +164,8 @@ const ThreeRope = ({ connections }: ThreeRopeProps) => {
       const x = x1 + (x2 - x1) * t;
       const y = y1 + (y2 - y1) * t;
       
-      // Initialize with minimal sag for taut starting position
-      const sagAmount = i === 0 || i === numSegments ? 0 : Math.sin((i / numSegments) * Math.PI) * 1;
+      // Initialize perfectly straight for maximum tautness (no sag)
+      const sagAmount = 0; // Zero sag for perfectly taut rope
       
       segments.push({
         position: new THREE.Vector3(x, y + sagAmount, 0),
@@ -224,7 +228,8 @@ const ThreeRope = ({ connections }: ThreeRopeProps) => {
         
         const delta = seg2.position.clone().sub(seg1.position);
         const distance = delta.length();
-        const restLength = (segments as any).restLength || 10;
+        // Use precisely calculated rest length for perfect tautness
+        const restLength = (segments as any).restLength || distance;
         const diff = distance > 0.01 ? (distance - restLength) / distance : 0;
         
         if (!seg1.fixed && !seg2.fixed) {
