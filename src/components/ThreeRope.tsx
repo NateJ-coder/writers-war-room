@@ -161,7 +161,6 @@ const ThreeRope = ({ connections }: ThreeRopeProps) => {
       const y = y1 + (y2 - y1) * t;
       
       // Initialize with minimal sag for taut starting position
-      const midPoint = numSegments / 2;
       const sagAmount = i === 0 || i === numSegments ? 0 : Math.sin((i / numSegments) * Math.PI) * 1;
       
       segments.push({
