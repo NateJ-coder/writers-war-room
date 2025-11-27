@@ -44,10 +44,10 @@ const deduplicateContent = (existingContent: string, newContent: string): string
   
   // Filter out new paragraphs that are too similar to existing ones
   const uniqueNewParas = newParas.filter(newPara => {
-    // Check if this paragraph already exists (with 75% similarity threshold)
+    // Check if this paragraph already exists (with 65% similarity threshold)
     const isDuplicate = existingParas.some(existingPara => {
       const similarity = calculateSimilarity(existingPara, newPara);
-      return similarity > 0.75; // 75% similar = duplicate
+      return similarity > 0.65; // 65% similar = duplicate (more aggressive)
     });
     return !isDuplicate;
   });
@@ -802,6 +802,9 @@ const Writing = () => {
         </button>
         <button onClick={handleCleanupDuplicates} style={{ padding: '8px 16px', fontSize: '0.9em', backgroundColor: 'rgba(0, 217, 255, 0.2)', border: '1px solid var(--neon-blue)' }}>
           🧹 Remove Duplicates
+        </button>
+        <button onClick={() => window.location.href = '/editor'} style={{ padding: '8px 16px', fontSize: '0.9em', backgroundColor: 'rgba(0, 255, 136, 0.2)', border: '1px solid var(--neon-green)' }}>
+          🤖 AI Editor
         </button>
         <button onClick={() => setExportOpen(true)} style={{ padding: '8px 16px', fontSize: '0.9em' }}>
           💾 Export

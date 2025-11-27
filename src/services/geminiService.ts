@@ -1,6 +1,8 @@
-import { GoogleGenAI, GenerateContentResponse, Content } from "@google/genai";
+import { GoogleGenAI, GenerateContentResponse, Content, Type } from "@google/genai";
 import { Message, Role, Source } from '../types/chatbot';
 import { getWebsiteContext, formatContextForAI } from './contentContext';
+import type { Suggestion } from '../types/editor';
+import { SuggestionType } from '../types/editor';
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
@@ -370,5 +372,91 @@ export const searchImages = async (query: string): Promise<string[]> => {
       `https://source.unsplash.com/800x600/?${encodedQuery},1`,
       `https://source.unsplash.com/800x600/?${encodedQuery},2`
     ];
+  }
+};
+
+// AI Editor: Get editing suggestions for manuscript text
+const suggestionSchema = {
+  type: Type.OBJECT,
+  properties: {
+    type: {
+      type: Type.STRING,
+      enum: Object.values(SuggestionType),
+      description: "The category of the suggestion.",
+    },
+    original: {
+      type: Type.STRING,
+      description: "The exact, original text snippet from the manuscript that needs editing.",
+    },
+    suggestion: {
+      type: Type.STRING,
+      description: "The suggested replacement text or a comment for improvement.",
+    },
+    explanation: {
+      type: Type.STRING,
+      description: "A brief, clear explanation for why the change is recommended.",
+    },
+  },
+  required: ["type", "original", "suggestion", "explanation"],
+};
+
+export const getEditingSuggestions = async (text: string): Promise<Suggestion[]> => {
+  if (!ai) {
+    throw new Error("Gemini API key not configured. Please set VITE_GEMINI_API_KEY environment variable.");
+  }
+
+  const model = 'gemini-2.0-flash-exp';
+
+  const systemInstruction = `You are an expert editor for a best-selling author. Your task is to analyze the provided manuscript text and identify areas for improvement. Provide specific, actionable suggestions.
+Focus on the following categories:
+- GRAMMAR: Correct spelling, punctuation, and grammatical errors.
+- CLARITY: Rephrase sentences that are ambiguous, confusing, or poorly structured.
+- STYLE: Suggest improvements to tone, word choice, and sentence flow to make the writing more engaging.
+- REDUNDANCY: Identify and suggest removal or consolidation of repetitive words, phrases, or ideas.
+- DUPLICATE: Pinpoint entire sentences or passages that are repeated verbatim or nearly verbatim elsewhere in the text.
+- CHARACTER_CONSISTENCY: Flag any contradictions in a character's appearance, behavior, abilities, or backstory. For example, if a character has blue eyes in one chapter and brown in another, or acts completely out of character without justification.
+- TONE_STYLE: Analyze the overall tone (e.g., formal, humorous, suspenseful) and writing style. Provide suggestions to maintain consistency or enhance the narrative effect. For instance, point out if a section's tone clashes with the rest of the chapter, or suggest stylistic changes to improve pacing. For TONE_STYLE suggestions, the 'original' text can be a representative passage.
+
+For each suggestion, you must provide the original text snippet, your proposed change, and a concise explanation. Do not suggest changes for the entire text at once; break it down into smaller, individual suggestions. Ensure the 'original' field is an exact substring from the input text.
+
+Return your findings as a JSON array of suggestion objects.`;
+
+  try {
+    const response: GenerateContentResponse = await ai.models.generateContent({
+      model: model,
+      contents: [{
+        role: 'user',
+        parts: [{ text }],
+      }],
+      config: {
+        systemInstruction: systemInstruction,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: suggestionSchema,
+        },
+        temperature: 0.3,
+      }
+    });
+
+    const jsonText = response.text?.trim() ?? "";
+    if (!jsonText) {
+      return [];
+    }
+    
+    const suggestionsData = JSON.parse(jsonText) as Omit<Suggestion, 'id'>[];
+
+    // Add a unique ID to each suggestion for React key purposes
+    return suggestionsData.map((s, index) => ({
+      ...s,
+      id: `${Date.now()}-${index}`
+    }));
+
+  } catch (error) {
+    console.error("Error calling Gemini API for editing suggestions:", error);
+    if (error instanceof Error && error.message.includes('json')) {
+      throw new Error("The AI returned an invalid format. Please try again with a different text or a shorter selection.");
+    }
+    throw new Error("Failed to get suggestions from the AI. Please check your API key and network connection.");
   }
 };

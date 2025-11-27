@@ -53,6 +53,9 @@ const Layout = ({ children }: LayoutProps) => {
         <Link to="/writing" className={isActive('/writing') ? 'active' : ''}>
           ✏️ Writing
         </Link>
+        <Link to="/editor" className={isActive('/editor') ? 'active' : ''}>
+          🤖 AI Editor
+        </Link>
         <Link to="/resources" className={isActive('/resources') ? 'active' : ''}>
           📚 Resources
         </Link>

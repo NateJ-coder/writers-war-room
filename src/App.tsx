@@ -5,6 +5,7 @@ import Pinboard from './pages/Pinboard';
 import Contents from './pages/Contents';
 import Outline from './pages/Outline';
 import Writing from './pages/Writing';
+import Editor from './pages/Editor';
 import Resources from './pages/Resources';
 import { ChatbotWidget } from './components/chatbot/ChatbotWidget';
 import { ChatbotToggle } from './components/chatbot/ChatbotToggle';
@@ -48,6 +49,7 @@ function App() {
                 <Route path="/contents" element={<Contents />} />
                 <Route path="/outline" element={<Outline />} />
                 <Route path="/writing" element={<Writing />} />
+                <Route path="/editor" element={<Editor />} />
                 <Route path="/resources" element={<Resources />} />
               </Routes>
             </Layout>

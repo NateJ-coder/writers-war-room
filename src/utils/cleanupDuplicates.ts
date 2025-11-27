@@ -88,20 +88,23 @@ export const cleanupDuplicates = (content: string): { cleaned: string; removedCo
   // Compare each section with every other section
   for (let i = 0; i < sections.length; i++) {
     if (!sectionsToKeep[i]) continue; // Already marked for removal
+    if (sections[i].text.trim().length < 50) continue; // Skip very short sections
     
     for (let j = i + 1; j < sections.length; j++) {
       if (!sectionsToKeep[j]) continue; // Already marked for removal
+      if (sections[j].text.trim().length < 50) continue; // Skip very short sections
       
       const similarity = calculateSimilarity(sections[i].text, sections[j].text);
       
-      // If similarity is high (70%+), mark the later one for removal
-      if (similarity > 0.70) {
+      // Lower threshold to 65% to catch more duplicates
+      if (similarity > 0.65) {
         sectionsToKeep[j] = false;
         removedCount++;
         
         // Create a preview of what's being removed
         const preview = sections[j].text.substring(0, 100).replace(/\n/g, ' ').trim();
-        details.push(`Removed duplicate section ${j + 1} (${similarity.toFixed(0)}% similar): "${preview}..."`);
+        const percentage = Math.round(similarity * 100);
+        details.push(`Removed duplicate section ${j + 1} (${percentage}% similar): "${preview}..."`);
       }
     }
   }
@@ -120,25 +123,41 @@ export const cleanupDuplicates = (content: string): { cleaned: string; removedCo
 export const cleanupSpecificIssues = (content: string): string => {
   let cleaned = content;
   
-  // Remove the meta-commentary line if present
-  cleaned = cleaned.replace(
-    /Here is the refined manuscript draft.*?better readability and presentation.*?\./gi,
-    ''
-  );
+  // Remove the meta-commentary line and everything after it that duplicates earlier content
+  const metaCommentaryMatch = cleaned.match(/Here is the refined manuscript draft[^.]*\.[\s\S]*?(?=\*{3}|\n##)/i);
+  if (metaCommentaryMatch) {
+    const metaStart = metaCommentaryMatch.index!;
+    const metaEnd = metaStart + metaCommentaryMatch[0].length;
+    
+    // Find if there's content after this that duplicates what came before
+    const beforeMeta = cleaned.substring(0, metaStart);
+    const afterMeta = cleaned.substring(metaEnd);
+    
+    // Check if the content after meta-commentary is a duplicate
+    const afterMetaStart = afterMeta.substring(0, 500).toLowerCase().trim();
+    const beforeMetaLower = beforeMeta.toLowerCase();
+    
+    // If content after meta exists in content before, remove everything from meta onwards
+    if (afterMetaStart.length > 100 && beforeMetaLower.includes(afterMetaStart.substring(0, 100))) {
+      cleaned = beforeMeta.trim();
+    } else {
+      // Just remove the meta-commentary line itself
+      cleaned = cleaned.replace(/Here is the refined manuscript draft[^.]*\./gi, '');
+    }
+  }
   
   // Remove duplicate ## Chapter 1 heading if there are two
   const chapterMatches = [...cleaned.matchAll(/^##\s*Chapter\s+1\b/gim)];
   if (chapterMatches.length > 1) {
-    // Keep only the first one
-    const secondIndex = chapterMatches[1].index!;
-    
-    // Remove the second heading
-    cleaned = cleaned.substring(0, secondIndex) + 
-             cleaned.substring(secondIndex).replace(/^##\s*Chapter\s+1\b/im, '');
+    // Keep only the first one, remove subsequent ones
+    for (let i = 1; i < chapterMatches.length; i++) {
+      cleaned = cleaned.replace(/^##\s*Chapter\s+1\b/im, '');
+    }
   }
   
-  // Clean up excessive whitespace
-  cleaned = cleaned.replace(/\n{4,}/g, '\n\n\n');
+  // Clean up excessive whitespace and asterisks
+  cleaned = cleaned.replace(/\*{3,}\s*\n+\s*\*{3,}/g, '\n\n***\n\n'); // Normalize section breaks
+  cleaned = cleaned.replace(/\n{4,}/g, '\n\n\n'); // Max 3 newlines
   cleaned = cleaned.trim();
   
   return cleaned;
