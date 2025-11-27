@@ -159,16 +159,23 @@ export const refineBookDraft = async (rawDraft: string): Promise<string> => {
     throw new Error("Gemini API key not configured.");
   }
 
-  const prompt = `You are a professional book editor. Take this raw manuscript draft and refine it for better organization and layout while preserving the author's voice and story. 
+  const prompt = `You are a professional book editor. Take this raw manuscript draft and refine it ONLY for formatting and organization.
 
-Format it as a proper book manuscript with:
-- Clear chapter breaks
+CRITICAL RULES:
+1. Do NOT rewrite or rephrase any content
+2. Do NOT create variations of existing text
+3. Do NOT add any new story content
+4. ONLY fix obvious typos and punctuation errors
+5. ONLY add paragraph breaks where clearly needed
+6. ONLY add chapter headings if not present
+
+Your job is to format, not rewrite. Return the EXACT same story content, just better formatted.
+
+Format it with:
+- Clear chapter breaks (if missing)
 - Proper paragraph spacing
-- Section divisions where appropriate
+- Consistent punctuation
 - Maintained narrative flow
-- Minor grammar/punctuation fixes only
-
-Keep ALL the content, just organize and format it better. Do not add or remove story content.
 
 Here is the draft:
 

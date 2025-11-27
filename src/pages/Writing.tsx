@@ -7,6 +7,59 @@ import { checkConsistency, type ConsistencyIssue } from '../services/consistency
 import { exportToPDF, exportToWord, exportToText, exportToMarkdown } from '../services/exportService';
 import { loadChapters, saveChapters, updateChapter, type Chapter } from '../services/chapterManager';
 
+// Deduplicate content by detecting similar paragraphs and sections
+const deduplicateContent = (existingContent: string, newContent: string): string => {
+  // Split both contents into paragraphs
+  const existingParas = existingContent.split(/\n\n+/).filter(p => p.trim().length > 20);
+  const newParas = newContent.split(/\n\n+/).filter(p => p.trim().length > 20);
+  
+  // Helper: Calculate similarity between two strings (0-1)
+  const calculateSimilarity = (str1: string, str2: string): number => {
+    const s1 = str1.toLowerCase().replace(/\s+/g, ' ').trim();
+    const s2 = str2.toLowerCase().replace(/\s+/g, ' ').trim();
+    
+    // Exact match
+    if (s1 === s2) return 1.0;
+    
+    // Check if one contains most of the other (80% threshold)
+    const longer = s1.length > s2.length ? s1 : s2;
+    const shorter = s1.length > s2.length ? s2 : s1;
+    
+    if (longer.includes(shorter)) {
+      return shorter.length / longer.length;
+    }
+    
+    // Word-based similarity
+    const words1 = s1.split(/\s+/);
+    const words2 = s2.split(/\s+/);
+    const set1 = new Set(words1);
+    const set2 = new Set(words2);
+    
+    const intersection = new Set([...set1].filter(x => set2.has(x)));
+    const union = new Set([...set1, ...set2]);
+    
+    return intersection.size / union.size;
+  };
+  
+  // Filter out new paragraphs that are too similar to existing ones
+  const uniqueNewParas = newParas.filter(newPara => {
+    // Check if this paragraph already exists (with 75% similarity threshold)
+    const isDuplicate = existingParas.some(existingPara => {
+      const similarity = calculateSimilarity(existingPara, newPara);
+      return similarity > 0.75; // 75% similar = duplicate
+    });
+    return !isDuplicate;
+  });
+  
+  // If nothing is truly new, return existing content unchanged
+  if (uniqueNewParas.length === 0) {
+    return existingContent;
+  }
+  
+  // Merge: existing content + only genuinely new paragraphs
+  return existingContent + '\n\n' + uniqueNewParas.join('\n\n');
+};
+
 const Writing = () => {
   const [draft, setDraft] = useState('');
   const [sessionActive, setSessionActive] = useState(false);
@@ -450,10 +503,10 @@ const Writing = () => {
       setSaveNotification('Refining new content with AI...');
       const refinedNewContent = await refineBookDraft(draft);
       
-      // 3. Merge with existing content (append, don't duplicate)
-      setSaveNotification('Merging with existing content...');
+      // 3. Smart merge with deduplication
+      setSaveNotification('Merging and removing duplicates...');
       const mergedDraft = existingDraft 
-        ? `${existingDraft}\n\n${refinedNewContent}` 
+        ? deduplicateContent(existingDraft, refinedNewContent)
         : refinedNewContent;
       
       // Save merged draft to localStorage
