@@ -6,6 +6,7 @@ import { saveVersion, getVersionHistory, getVersion, createSnapshot, restoreVers
 import { checkConsistency, type ConsistencyIssue } from '../services/consistencyChecker';
 import { exportToPDF, exportToWord, exportToText, exportToMarkdown } from '../services/exportService';
 import { loadChapters, saveChapters, updateChapter, type Chapter } from '../services/chapterManager';
+import { performFullCleanup } from '../utils/cleanupDuplicates';
 
 // Deduplicate content by detecting similar paragraphs and sections
 const deduplicateContent = (existingContent: string, newContent: string): string => {
@@ -77,6 +78,8 @@ const Writing = () => {
   const [chaptersOpen, setChaptersOpen] = useState(false);
   const [consistencyOpen, setConsistencyOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [cleanupOpen, setCleanupOpen] = useState(false);
+  const [cleanupResults, setCleanupResults] = useState<{ removedCount: number; details: string[] } | null>(null);
   const [consistencyIssues, setConsistencyIssues] = useState<ConsistencyIssue[]>([]);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [versions, setVersions] = useState<BookVersion[]>([]);
@@ -456,6 +459,52 @@ const Writing = () => {
     }
   };
 
+  // Cleanup Duplicates Function
+  const handleCleanupDuplicates = () => {
+    setSaveNotification('🧹 Analyzing book for duplicates...');
+    
+    try {
+      const bookContent = localStorage.getItem('refined-book-draft') || '';
+      
+      if (!bookContent) {
+        setSaveNotification('⚠️ No book content to clean');
+        setTimeout(() => setSaveNotification(''), 3000);
+        return;
+      }
+      
+      const result = performFullCleanup(bookContent);
+      
+      if (result.removedCount === 0) {
+        setSaveNotification('✅ No duplicates found! Book is clean.');
+        setTimeout(() => setSaveNotification(''), 3000);
+        setCleanupResults({ removedCount: 0, details: ['No duplicates detected'] });
+        setCleanupOpen(true);
+        return;
+      }
+      
+      // Save the cleaned version
+      saveWebsiteContent({ refinedBookDraft: result.cleaned });
+      
+      // Update file if linked
+      if (fileLinked) {
+        updateBookDraftFile(result.cleaned);
+      }
+      
+      // Save a version backup before cleanup
+      saveVersion(bookContent, 'Before duplicate cleanup');
+      
+      setCleanupResults({ removedCount: result.removedCount, details: result.details });
+      setCleanupOpen(true);
+      setSaveNotification(`✅ Removed ${result.removedCount} duplicate sections!`);
+      setTimeout(() => setSaveNotification(''), 4000);
+      
+    } catch (error) {
+      console.error('Cleanup error:', error);
+      setSaveNotification('❌ Cleanup failed');
+      setTimeout(() => setSaveNotification(''), 3000);
+    }
+  };
+
   // Export Functions
   const handleExport = async (format: 'pdf' | 'docx' | 'markdown' | 'txt') => {
     setSaveNotification(`📄 Exporting as ${format.toUpperCase()}...`);
@@ -750,6 +799,9 @@ const Writing = () => {
         </button>
         <button onClick={runConsistencyCheck} style={{ padding: '8px 16px', fontSize: '0.9em' }}>
           🔍 Check Consistency
+        </button>
+        <button onClick={handleCleanupDuplicates} style={{ padding: '8px 16px', fontSize: '0.9em', backgroundColor: 'rgba(0, 217, 255, 0.2)', border: '1px solid var(--neon-blue)' }}>
+          🧹 Remove Duplicates
         </button>
         <button onClick={() => setExportOpen(true)} style={{ padding: '8px 16px', fontSize: '0.9em' }}>
           💾 Export
@@ -1094,6 +1146,67 @@ const Writing = () => {
             </div>
             <div style={{ marginTop: '20px', textAlign: 'right' }}>
               <button onClick={() => setExportOpen(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cleanup Results Modal */}
+      {cleanupOpen && cleanupResults && (
+        <div className="modal-overlay" onClick={() => setCleanupOpen(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px' }}>
+            <h3 style={{ color: 'var(--neon-blue)', fontFamily: 'Bebas Neue, sans-serif', marginTop: 0 }}>
+              🧹 Duplicate Cleanup Results
+            </h3>
+            
+            {cleanupResults.removedCount === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px' }}>
+                <p style={{ color: 'var(--neon-green)', fontSize: '1.2em', marginBottom: '10px' }}>
+                  ✨ Your book is already clean!
+                </p>
+                <p style={{ color: 'var(--text-secondary)' }}>
+                  No duplicate sections were detected.
+                </p>
+              </div>
+            ) : (
+              <div>
+                <div style={{ 
+                  background: 'rgba(0, 217, 255, 0.1)', 
+                  padding: '20px', 
+                  borderRadius: '8px',
+                  border: '2px solid var(--neon-blue)',
+                  marginBottom: '20px'
+                }}>
+                  <p style={{ color: 'var(--neon-green)', fontSize: '1.3em', margin: 0, fontWeight: 'bold' }}>
+                    ✅ Removed {cleanupResults.removedCount} duplicate section{cleanupResults.removedCount !== 1 ? 's' : ''}
+                  </p>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9em', marginTop: '10px', marginBottom: 0 }}>
+                    A backup was saved to version history
+                  </p>
+                </div>
+
+                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                  <h4 style={{ color: 'var(--neon-yellow)', fontSize: '1em', marginBottom: '10px' }}>
+                    What was removed:
+                  </h4>
+                  {cleanupResults.details.map((detail, idx) => (
+                    <div key={idx} style={{
+                      padding: '12px',
+                      marginBottom: '8px',
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      borderRadius: '6px',
+                      borderLeft: '3px solid var(--neon-pink)',
+                      fontSize: '0.9em'
+                    }}>
+                      {detail}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{ marginTop: '20px', textAlign: 'right' }}>
+              <button onClick={() => setCleanupOpen(false)}>Close</button>
             </div>
           </div>
         </div>
